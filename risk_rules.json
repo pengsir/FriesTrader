@@ -13,7 +13,7 @@
     "watchlist_name": "Positions",
     "watchlist_max_candidates": 25,
     "supplementary_scan_id": "bdbdca75-26d5-409e-9e10-552908433be6",
-    "supplementary_scan_max_candidates": 20,
+    "supplementary_scan_max_candidates": 15,
     "supplementary_scan_note": "Robinhood scan -- define whatever screening conditions you like (relative volume, market cap, RSI, etc.) via the Robinhood MCP's create_scan tool, then paste its scan_id here. Additive to watchlist_max_candidates, not shared with it -- the watchlist's own slots are never crowded out by scan results.",
 
     "min_avg_daily_volume": 1000000,
