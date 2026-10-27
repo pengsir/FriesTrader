@@ -1,7 +1,7 @@
 {
   "_comment": "These are hard numeric limits. Claude's reasoning/thesis step may NEVER override these values. Any proposed trade that violates a rule here must be rejected before it reaches review_equity_order, with no exceptions regardless of how strong the thesis sounds.",
 
-  "account_number": "YOUR_ACCOUNT_NUMBER_HERE",
+  "account_number": "900471939",
 
   "execution": {
     "mode": "dry_run",
@@ -10,10 +10,10 @@
   },
 
   "universe": {
-    "watchlist_name": "YOUR_WATCHLIST_NAME_HERE",
+    "watchlist_name": "Positions",
     "watchlist_max_candidates": 25,
-    "supplementary_scan_id": "YOUR_SCAN_ID_HERE",
-    "supplementary_scan_max_candidates": 5,
+    "supplementary_scan_id": "bdbdca75-26d5-409e-9e10-552908433be6",
+    "supplementary_scan_max_candidates": 20,
     "supplementary_scan_note": "Robinhood scan -- define whatever screening conditions you like (relative volume, market cap, RSI, etc.) via the Robinhood MCP's create_scan tool, then paste its scan_id here. Additive to watchlist_max_candidates, not shared with it -- the watchlist's own slots are never crowded out by scan results.",
 
     "min_avg_daily_volume": 1000000,
@@ -91,7 +91,7 @@
     "enabled": true,
     "note": "Toggle only -- set enabled to false to turn this guard off entirely; no other change needed. IRS wash-sale rule applies per taxpayer across ALL accounts, not per account, so this checks linked_accounts, not just account_number. Blocks BUYS only (new entries and top-ups) -- never blocks a stop_loss/take_profit/exit_existing sell, since risk management must never bend to a tax outcome; those sells are instead logged with a wash-sale flag if one applies, for the human's own tax tracking. This cannot prevent a wash sale caused by a purchase made LATER in another linked account after an agentic-account sell -- those accounts are outside this pipeline's control; only the human can avoid that side.",
     "lookback_window_days": 30,
-    "linked_accounts": ["YOUR_ACCOUNT_NUMBER_HERE", "YOUR_OTHER_ACCOUNT_NUMBER_HERE"]
+    "linked_accounts": ["900471939"]
   },
 
   "entry_price_gap": {
