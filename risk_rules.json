@@ -14,7 +14,7 @@
     "watchlist_max_candidates": 25,
     "supplementary_scan_id": "5b3196c3-cbad-4089-ae3c-51f500fc00ce",
     "supplementary_scan_max_candidates": 15,
-    "supplementary_scan_note": "Robinhood scan 'Short-term Momentum Breakout' -- $2B-$50B cap, price >= 5, 30d avg volume >= 1M, positive operating margin, RSI(14) 50-72, price above 200d MA and 1.0-1.10x its 20d MA (matches entry_extension), price >= 85% of 52w high, 5d change +2% to +15%, 5d/30d avg volume >= 1.2. Deliberately avoids same-day change/relative-volume hard filters because Phase A runs after the close, when day change reads 0. Sorted by same-day relative volume desc. Prior scan 'Cyclical Deep Value' (320b00d0-848f-4029-a358-98c6c641a01c) is kept in Robinhood if you want to switch back. Additive to watchlist_max_candidates, not shared with it -- the watchlist's own slots are never crowded out by scan results.",
+    "supplementary_scan_note": "Robinhood scan 'Short-term Momentum Breakout' -- $2B-$50B cap, price >= 5, 30d avg volume >= 1M, positive operating margin, RSI(14) 48-73, price above 200d MA and 1.0-1.10x its 20d MA (matches entry_extension), price >= 85% of 52w high, 5d change +1.5% to +18%, 5d/30d avg volume >= 1.15. Deliberately avoids same-day change/relative-volume hard filters because Phase A runs after the close, when day change reads 0. Sorted by same-day relative volume desc. Prior scan 'Cyclical Deep Value' (320b00d0-848f-4029-a358-98c6c641a01c) is kept in Robinhood if you want to switch back. Additive to watchlist_max_candidates, not shared with it -- the watchlist's own slots are never crowded out by scan results.",
 
     "min_avg_daily_volume": 1000000,
     "min_market_cap_usd": 2000000000,
