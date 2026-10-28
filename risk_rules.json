@@ -12,9 +12,9 @@
   "universe": {
     "watchlist_name": "Positions",
     "watchlist_max_candidates": 25,
-    "supplementary_scan_id": "320b00d0-848f-4029-a358-98c6c641a01c",
+    "supplementary_scan_id": "5b3196c3-cbad-4089-ae3c-51f500fc00ce",
     "supplementary_scan_max_candidates": 15,
-    "supplementary_scan_note": "Robinhood scan 'Cyclical Deep Value' -- cyclical sectors (Energy, Basic Materials, Industrials, Consumer Cyclical, Financial Services), $2B-$50B cap, P/B 0-2, price <= 75% of 52w high, RSI(14) 25-60, positive operating+net margin, LT debt/capital < 0.5, quick ratio >= 1, institutional ownership > 40%. Sorted P/B ascending. Additive to watchlist_max_candidates, not shared with it -- the watchlist's own slots are never crowded out by scan results.",
+    "supplementary_scan_note": "Robinhood scan 'Short-term Momentum Breakout' -- $2B-$50B cap, price >= 5, 30d avg volume >= 1M, positive operating margin, RSI(14) 50-72, price above 200d MA and 1.0-1.10x its 20d MA (matches entry_extension), price >= 85% of 52w high, 5d change +2% to +15%, 5d/30d avg volume >= 1.2. Deliberately avoids same-day change/relative-volume hard filters because Phase A runs after the close, when day change reads 0. Sorted by same-day relative volume desc. Prior scan 'Cyclical Deep Value' (320b00d0-848f-4029-a358-98c6c641a01c) is kept in Robinhood if you want to switch back. Additive to watchlist_max_candidates, not shared with it -- the watchlist's own slots are never crowded out by scan results.",
 
     "min_avg_daily_volume": 1000000,
     "min_market_cap_usd": 2000000000,
@@ -28,7 +28,7 @@
 
     "trend_filter_enabled": true,
     "trend_filter_lookback_trading_days": 200,
-    "trend_filter_min_ratio_of_ma": 0.7
+    "trend_filter_min_ratio_of_ma": 1.0
   },
 
   "signal_thresholds": {
