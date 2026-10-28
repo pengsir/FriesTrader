@@ -74,11 +74,14 @@ about current risk needed. Log the reason as
 
 `universe.trend_filter_lookback_trading_days` is a mechanical downtrend
 exclusion, active only when `universe.trend_filter_enabled` is true:
-exclude the candidate if `current_price` is below the simple moving
-average of its trailing `trend_filter_lookback_trading_days` daily
-closes (from the historicals series pulled above), regardless of how
-strong the candidate otherwise looks. Log as
-`"200-day MA $<X>, current price $<Y> (<Z>% below trend) — excluded per universe.trend_filter_enabled"`.
+exclude the candidate if `current_price` is below
+`universe.trend_filter_min_ratio_of_ma` (default 1.0 if absent) times the
+simple moving average of its trailing `trend_filter_lookback_trading_days`
+daily closes (from the historicals series pulled above), regardless of
+how strong the candidate otherwise looks. A ratio under 1.0 tolerates a
+candidate trading modestly below its average (deep-value entries) while
+still excluding ones in a steeper breakdown. Log as
+`"200-day MA $<X>, current price $<Y> (<Z>% below trend, floor <ratio>x MA) — excluded per universe.trend_filter_enabled"`.
 If fewer than `trend_filter_lookback_trading_days` daily bars are
 available (e.g. a recent IPO), skip this specific check for that
 candidate rather than excluding or guessing, and log

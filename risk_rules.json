@@ -12,9 +12,9 @@
   "universe": {
     "watchlist_name": "Positions",
     "watchlist_max_candidates": 25,
-    "supplementary_scan_id": "bdbdca75-26d5-409e-9e10-552908433be6",
+    "supplementary_scan_id": "320b00d0-848f-4029-a358-98c6c641a01c",
     "supplementary_scan_max_candidates": 15,
-    "supplementary_scan_note": "Robinhood scan -- define whatever screening conditions you like (relative volume, market cap, RSI, etc.) via the Robinhood MCP's create_scan tool, then paste its scan_id here. Additive to watchlist_max_candidates, not shared with it -- the watchlist's own slots are never crowded out by scan results.",
+    "supplementary_scan_note": "Robinhood scan 'Cyclical Deep Value' -- cyclical sectors (Energy, Basic Materials, Industrials, Consumer Cyclical, Financial Services), $2B-$50B cap, P/B 0-2, price <= 75% of 52w high, RSI(14) 25-60, positive operating+net margin, LT debt/capital < 0.5, quick ratio >= 1, institutional ownership > 40%. Sorted P/B ascending. Additive to watchlist_max_candidates, not shared with it -- the watchlist's own slots are never crowded out by scan results.",
 
     "min_avg_daily_volume": 1000000,
     "min_market_cap_usd": 2000000000,
@@ -27,7 +27,8 @@
     "inverse_etf_filter_enabled": true,
 
     "trend_filter_enabled": true,
-    "trend_filter_lookback_trading_days": 200
+    "trend_filter_lookback_trading_days": 200,
+    "trend_filter_min_ratio_of_ma": 0.7
   },
 
   "signal_thresholds": {
