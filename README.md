@@ -80,7 +80,7 @@ graph TD
 Only one step is a judgment call — the Phase A thesis. Every filter,
 ranking, and size is a deterministic script.
 
-**Phase A — screen and write a thesis** (Steps 1–3, ~4:30pm Central
+**Phase A — screen and write a thesis** (Steps 1–3, ~2:30pm Pacific
 weekdays; spec `PHASE_A_TASK.md`). Places no orders.
 
 1. **Universe.** Start with your watchlist (up to
@@ -101,7 +101,7 @@ weekdays; spec `PHASE_A_TASK.md`). Places no orders.
    percent below the 52-week high. This is the stock selection.
 
 **Phase B — re-verify, enforce the rules, place orders** (Steps 4–9,
-~8:35am Central weekdays; spec `PHASE_B_TASK.md`). Decides which `long`
+~6:35am Pacific weekdays; spec `PHASE_B_TASK.md`). Decides which `long`
 candidates are bought:
 
 - **Re-verify.** Re-check each proposal against the opening price. Run all
@@ -287,9 +287,9 @@ This template gets improvements over time.
 
 ## Running it
 
-Two schedules need to fire: Phase A around 4:30pm Central on weekdays
+Two schedules need to fire: Phase A around 2:30pm Pacific on weekdays
 (hand Claude Code `PHASE_A_TASK.md` to execute), and Phase B around
-8:35am Central on weekdays, 5 minutes after market open (hand it
+6:35am Pacific on weekdays, 5 minutes after market open (hand it
 `PHASE_B_TASK.md`). Each run is a fresh Claude Code session pointed at
 this repo — no state needs to persist locally between runs, since the
 repo itself (`risk_rules.json`, `pending_proposals.jsonl`,
@@ -322,11 +322,11 @@ deployment uses; copy one in and swap in your own account number.
 ```
 You are running the DAILY automated Phase A step (screening & thesis only) for a small real personal trading account on Robinhood (account_number: <your Robinhood account_number>). This repo has already been cloned into your working directory. PHASE_A_TASK.md in this checkout is the full source-of-truth spec for what to do (Steps 1-3) — read and follow it exactly.
 
-First, determine today's REAL date, day-of-week, and time-of-day in America/Chicago (Central) via Bash — do not guess or infer these:
-TZ='America/Chicago' date +'%Y-%m-%d'
-TZ='America/Chicago' date +'%A'
-TZ='America/Chicago' date +'%H:%M:%S'
-Use the date as the 'date' field and the time as the 'timestamp' field (time-of-day only, e.g. "16:30:01" — never prepend the date to it) on every line you write, per PHASE_A_TASK.md's Output section.
+First, determine today's REAL date, day-of-week, and time-of-day in America/Los_Angeles (Pacific) via Bash — do not guess or infer these:
+TZ='America/Los_Angeles' date +'%Y-%m-%d'
+TZ='America/Los_Angeles' date +'%A'
+TZ='America/Los_Angeles' date +'%H:%M:%S'
+Use the date as the 'date' field and the time as the 'timestamp' field (time-of-day only, e.g. "14:30:01" — never prepend the date to it) on every line you write, per PHASE_A_TASK.md's Output section.
 
 Read risk_rules.json fresh from this checkout every run — never assume prior values or cache across runs.
 
@@ -348,11 +348,11 @@ End with a concise summary of what you screened/filtered/proposed, and confirm t
 ```
 You are running the DAILY automated Phase B step (re-verify, risk enforcement, order review/execution, logging) for a small real personal trading account on Robinhood (account_number: <your Robinhood account_number>). This repo has already been cloned into your working directory. PHASE_B_TASK.md in this checkout is the full source-of-truth spec for what to do (Steps 4-9) — read and follow it exactly.
 
-First, determine today's REAL date, day-of-week, and time-of-day in America/Chicago (Central) via Bash — do not guess or infer these, and do not compute day-of-week yourself from the date string:
-TZ='America/Chicago' date +'%Y-%m-%d'
-TZ='America/Chicago' date +'%A'
-TZ='America/Chicago' date +'%H:%M:%S'
-Use the date as the 'date' field and the time as the 'timestamp' field (time-of-day only, e.g. "08:35:01" — never prepend the date to it) on every line you write to trade_log.jsonl, per PHASE_B_TASK.md. Determine is_monday from the day-of-week output (true only if it's literally 'Monday') for the Step 7 weekend-gap check.
+First, determine today's REAL date, day-of-week, and time-of-day in America/Los_Angeles (Pacific) via Bash — do not guess or infer these, and do not compute day-of-week yourself from the date string:
+TZ='America/Los_Angeles' date +'%Y-%m-%d'
+TZ='America/Los_Angeles' date +'%A'
+TZ='America/Los_Angeles' date +'%H:%M:%S'
+Use the date as the 'date' field and the time as the 'timestamp' field (time-of-day only, e.g. "06:35:01" — never prepend the date to it) on every line you write to trade_log.jsonl, per PHASE_B_TASK.md. Determine is_monday from the day-of-week output (true only if it's literally 'Monday') for the Step 7 weekend-gap check.
 
 Read risk_rules.json fresh from this checkout every run — never assume prior values or cache across runs. Read pending_proposals.jsonl and trade_log.jsonl fresh from this checkout too.
 
@@ -402,9 +402,9 @@ truth — one line per decision; `trade_log_recent.md`, shown under "See
 it in action" above, is just its daily recap):
 
 ```json
-{"date": "2026-07-10", "timestamp": "08:38:10", "symbol": "EXAMPLE", "stage": "risk_check", "passed": true, "conviction": "medium", "risk_flags": [], "pct_below_52wk_high": 0.08, "proposal_date": "2026-07-09", "position_size_usd": 60.00, "concurrent_positions_after": 2, "cash_remaining_after": 340.00, "cash_buffer_after_pct": 0.34}
-{"date": "2026-07-09", "timestamp": "08:35:12", "symbol": "EXAMPLE", "stage": "order", "mode": "dry_run", "action": "buy", "dollar_amount": 60.00, "quote_ask": 84.20, "quantity": 0.712, "would_execute": true, "review_alerts": "none (order_checks empty)", "proposal_date": "2026-07-09"}
-{"date": "2026-07-10", "timestamp": "08:38:30", "symbol": "OTHER", "stage": "stop_loss", "entry_price": 100.00, "current_price": 92.50, "stop_pct_used": 0.075, "stdev_20d": 0.030, "drawdown_pct": 0.075, "triggered": true, "action": "sell_full_position"}
+{"date": "2026-07-10", "timestamp": "06:38:10", "symbol": "EXAMPLE", "stage": "risk_check", "passed": true, "conviction": "medium", "risk_flags": [], "pct_below_52wk_high": 0.08, "proposal_date": "2026-07-09", "position_size_usd": 60.00, "concurrent_positions_after": 2, "cash_remaining_after": 340.00, "cash_buffer_after_pct": 0.34}
+{"date": "2026-07-09", "timestamp": "06:35:12", "symbol": "EXAMPLE", "stage": "order", "mode": "dry_run", "action": "buy", "dollar_amount": 60.00, "quote_ask": 84.20, "quantity": 0.712, "would_execute": true, "review_alerts": "none (order_checks empty)", "proposal_date": "2026-07-09"}
+{"date": "2026-07-10", "timestamp": "06:38:30", "symbol": "OTHER", "stage": "stop_loss", "entry_price": 100.00, "current_price": 92.50, "stop_pct_used": 0.075, "stdev_20d": 0.030, "drawdown_pct": 0.075, "triggered": true, "action": "sell_full_position"}
 ```
 
 ## License

@@ -3,7 +3,7 @@
 _Part of [FriesTrader](https://github.com/YizhiSong/FriesTrader), Copyright (c) 2026 Yizhi Song, MIT License._
 
 Automated subset of this pipeline (see `README.md`), run every weekday
-4:30pm Central as a cloud routine.
+2:30pm Pacific as a cloud routine.
 
 Performs **ONLY Steps 1–3**. **NEVER** Step 4 (re-verify), 5 (risk
 enforcement), 6 (dry run/order review), or 7 (`trade_log.jsonl`) — those
@@ -358,7 +358,7 @@ should hold only today's candidates; history remains auditable via
 `trade_log.jsonl`, which Phase B writes to when acting on a proposal.
 
 Every line needs a real `"timestamp"` (`HH:mm:ss`, e.g. via
-`TZ='America/Chicago' date +'%H:%M:%S'` — never guessed) alongside
+`TZ='America/Los_Angeles' date +'%H:%M:%S'` — never guessed) alongside
 `"date"`. Time-of-day only, no date prefix. For human readability only —
 never used for idempotency or other logic.
 
