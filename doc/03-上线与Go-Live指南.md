@@ -79,10 +79,12 @@
 - Phase A：工作日 2:30pm Pacific
 - Phase B：工作日 6:35am Pacific
 
-注意：云端 routine 的 cron 使用固定 UTC，不随夏令时调整。当前配置为 Phase A `30 22 * * 1-5`、
-Phase B `35 14 * * 1-5`，上述时间是冬令时（标准时间）下的结果；夏令时期间（3 月至 11 月）
-实际运行时间会晚 1 小时（Phase A 约 3:30pm Pacific，Phase B 约 7:35am Pacific）。
-Phase B 仍在开盘之后运行，不影响正确性。如需全年固定在同一太平洋时间，需要在夏令时切换时手动调整 cron。
+注意：云端 routine 的 cron 使用固定 UTC，不随夏令时调整。为了全年固定在同一太平洋时间，
+每个 routine 每个工作日触发两次（Phase A `30 21,22 * * 1-5`、Phase B `35 13,14 * * 1-5`），
+并在提示词开头加入"时间检查"：先执行 `TZ='America/Los_Angeles' date +'%H%M'`，
+不在目标时间窗口内（Phase A 14:15–15:00，Phase B 06:30–07:15）就立即退出，不读数据、不写日志、不下单。
+两次触发中恰有一次通过检查，因此 Phase A 全年在 2:30pm、Phase B 全年在 6:35am（Pacific）运行。
+切换到实盘前，建议在检查之外再加一道保险：查 `trade_log.jsonl` 里当天是否已有 Phase B 的 `cycle_summary`，有则退出，防止重复运行。
 
 ### 4.2 运行时要重点检查
 
