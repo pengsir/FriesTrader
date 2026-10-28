@@ -79,6 +79,11 @@
 - Phase A：工作日 2:30pm Pacific
 - Phase B：工作日 6:35am Pacific
 
+注意：云端 routine 的 cron 使用固定 UTC，不随夏令时调整。当前配置为 Phase A `30 22 * * 1-5`、
+Phase B `35 14 * * 1-5`，上述时间是冬令时（标准时间）下的结果；夏令时期间（3 月至 11 月）
+实际运行时间会晚 1 小时（Phase A 约 3:30pm Pacific，Phase B 约 7:35am Pacific）。
+Phase B 仍在开盘之后运行，不影响正确性。如需全年固定在同一太平洋时间，需要在夏令时切换时手动调整 cron。
+
 ### 4.2 运行时要重点检查
 
 - pending_proposals.jsonl 是否正确写出
