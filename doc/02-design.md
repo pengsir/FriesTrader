@@ -169,8 +169,8 @@ execution.mode + dry-run count gate
 
 推荐配置两个独立 schedule：
 
-- Phase A：工作日约 16:30 America/Chicago；
-- Phase B：工作日约 08:35 America/Chicago。
+- Phase A：工作日约 14:30 America/Los_Angeles；
+- Phase B：工作日约 06:35 America/Los_Angeles。
 
 必须保证：
 

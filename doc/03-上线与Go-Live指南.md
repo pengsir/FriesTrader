@@ -76,8 +76,8 @@
 
 推荐做法：
 
-- Phase A：工作日 4:30pm Central
-- Phase B：工作日 8:35am Central
+- Phase A：工作日 2:30pm Pacific
+- Phase B：工作日 6:35am Pacific
 
 ### 4.2 运行时要重点检查
 
@@ -144,13 +144,13 @@
 
 ### 8.1 Phase A
 
-- 每个工作日 4:30pm Central
+- 每个工作日 2:30pm Pacific
 - 负责筛股和 thesis 生成
 - 不允许下订单
 
 ### 8.2 Phase B
 
-- 每个工作日 8:35am Central
+- 每个工作日 6:35am Pacific
 - 负责 risk verification, ranking, execution gate, logging
 - 只有在满足条件时才执行真实订单
 

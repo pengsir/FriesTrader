@@ -3,7 +3,7 @@
 _Part of [FriesTrader](https://github.com/YizhiSong/FriesTrader), Copyright (c) 2026 Yizhi Song, MIT License._
 
 Automated second half of this pipeline (see `README.md`), run every
-weekday 8:35am Central (5 min after 9:30am ET open) as a cloud routine.
+weekday 6:35am Pacific (5 min after 6:30am PT market open) as a cloud routine.
 Performs **Steps 4–9**, consuming candidates from Phase A's
 `pending_proposals.jsonl`.
 
@@ -19,7 +19,7 @@ Do not add, remove, or loosen any gate condition on your own judgment.
 1. Read `risk_rules.json` **fresh** — never cache across runs. Use its
    `account_number`, not a hardcoded value.
 2. Determine today's day of week mechanically (e.g.
-   `TZ='America/Chicago' date +'%A'`) — don't infer it from the date
+   `TZ='America/Los_Angeles' date +'%A'`) — don't infer it from the date
    string. Needed for Step 7's weekend-gap check.
 3. Read `pending_proposals.jsonl` (overwritten each Phase A run, holds only
    the latest run — use its `"stage": "thesis"` entries directly as
@@ -616,7 +616,7 @@ evaluations), and `order` stages, matching the shape already in
 `"position_action": "top_up"`.
 
 **Every line — including the final `cycle_summary` — needs a real
-`"timestamp"`** (`HH:mm:ss`, e.g. via `TZ='America/Chicago' date +'%H:%M:%S'`
+`"timestamp"`** (`HH:mm:ss`, e.g. via `TZ='America/Los_Angeles' date +'%H:%M:%S'`
 — never guessed), no date prefix. Separate from `"date"`/`"proposal_date"`
 — for readability only, never used for idempotency, dry-run count, or
 other logic; only `date` and `proposal_date` are mechanical.

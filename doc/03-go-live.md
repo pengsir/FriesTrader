@@ -14,7 +14,7 @@
 - 已开通并验证 Robinhood Agentic Trading 专用账户；
 - Robinhood MCP 已连接并能读取账户数据；
 - Claude Code 或等价调度环境可运行本仓库；
-- 系统时区和调度时区均明确为 `America/Chicago`；
+- 系统时区和调度时区均明确为 `America/Los_Angeles`；
 - 只有一个 Phase A schedule 和一个 Phase B schedule；
 - 已建立异常通知渠道。
 
