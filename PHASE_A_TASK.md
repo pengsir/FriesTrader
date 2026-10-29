@@ -5,7 +5,7 @@ _Part of [FriesTrader](https://github.com/YizhiSong/FriesTrader), Copyright (c) 
 Automated subset of this pipeline (see `README.md`), run every weekday
 2:30pm Pacific as a cloud routine.
 
-Performs **ONLY Steps 1–3**. **NEVER** Step 4 (re-verify), 5 (risk
+Performs **ONLY Steps 1–3 and the Step 3.5 watchlist sync**. **NEVER** Step 4 (re-verify), 5 (risk
 enforcement), 6 (dry run/order review), or 7 (`trade_log.jsonl`) — those
 belong to Phase B. Order tools (`review_equity_order`,
 `place_equity_order`, cancel) are hard-blocked at the connector level; do
@@ -351,6 +351,44 @@ earnings, deal, or approval catalyst the company's own release or an
 8-K/press wire is almost always available — cite it directly rather than a
 secondary write-up of it.
 
+## Step 3.5 — Sync the FriesTrader watchlist
+
+Runs once Step 3's thesis `direction` values are final, before the
+commit. Keeps a Robinhood watchlist named `FriesTrader` (this exact
+`display_name`, not `universe.watchlist_name`) in line with this run's
+conclusions. It is a convenience list only: nothing in Steps 1–3 or in
+Phase B reads it, and it never feeds the candidate list.
+
+Inputs come only from this run's own `"stage": "thesis"` lines — not
+from the `summary` lines (those carry `"<symbol> (<conviction>)"`
+labels) and not from any prior run:
+- `to_add` = `symbol` of every thesis line with `"direction": "long"`.
+- `to_remove` = `symbol` of every thesis line with `"direction"` of
+  `"avoid"` or `"exit_existing"`.
+
+If both are empty, skip this step entirely (no watchlist calls, no
+`watchlist_sync` line). Otherwise:
+1. `get_watchlists`, match `display_name == "FriesTrader"` to get its
+   `list_id`. If there is no match, `create_watchlist` with
+   `display_name="FriesTrader"` and use the returned id (note
+   `"created": true`).
+2. `get_watchlist_items` on that `list_id` for the symbols already on it.
+3. Add: `to_add` minus symbols already on the list. If any remain, one
+   `add_to_watchlist` call with `symbols`. Symbols already on the list are
+   skipped, not re-added.
+4. Remove: `to_remove` intersected with symbols currently on the list. If
+   any remain, one `remove_from_watchlist` call with `symbols`.
+
+Add and remove only touch symbols named by this run's thesis lines. A
+symbol on the list with no thesis this run (no signal, or screened out)
+stays where it is, and symbols you added by hand are never touched
+unless this run concludes `avoid`/`exit_existing` for them.
+
+This step must never block or fail the run. On any error (including a
+permission error on `create_watchlist`/`add_to_watchlist`/
+`remove_from_watchlist`), do not retry; log it in the `watchlist_sync`
+line's `errors` and continue to the commit as normal.
+
 ## Output
 
 **Overwrite `pending_proposals.jsonl` at the start of this run** — it
@@ -406,9 +444,22 @@ carry a conviction too, it's just not decision-relevant there. No other
 reason/detail fields — a quick-glance list, not a substitute for the
 thesis lines.
 
+**Then, only if Step 3.5 ran, append one `"stage": "watchlist_sync"`
+line** (after the five `summary` lines; inert to Phase B):
+
+```json
+{"date": "YYYY-MM-DD", "timestamp": "HH:mm:ss", "stage": "watchlist_sync", "list": "FriesTrader", "created": false, "added": ["AMRX"], "skipped_already_present": ["RNG"], "removed": [], "errors": []}
+```
+
+`added`/`skipped_already_present`/`removed` are plain symbol lists
+(empty if none); `errors` holds a short message per failed call.
+
 ## Hard stop
 
 Do not call `review_equity_order`, `place_equity_order`, or any
 cancel/order tool, or check `execution.mode`. `get_equity_positions` is
 for Step 1's candidate list only — no stop-loss/drawdown computation
-here; all risk enforcement is Phase B's job.
+here; all risk enforcement is Phase B's job. The only Robinhood writes
+this task may make are Step 3.5's `create_watchlist`/`add_to_watchlist`/
+`remove_from_watchlist` on the `FriesTrader` list — no order, cancel, or
+other account-changing calls.
