@@ -4,8 +4,8 @@ _Part of [FriesTrader](https://github.com/YizhiSong/FriesTrader), Copyright (c) 
 
 Automated second half of this pipeline (see `README.md`), run every
 weekday 6:35am Pacific (5 min after 6:30am PT market open) as a cloud routine.
-Performs **Steps 4–9**, consuming candidates from Phase A's
-`pending_proposals.jsonl`.
+Performs **Steps 4–9** (plus the Step 8.5 watchlist sync), consuming
+candidates from Phase A's `pending_proposals.jsonl`.
 
 Authorized to place real live orders under a narrow condition (see Step
 6's "Live-order gate" — Step 8 reuses the identical gate for buys).
@@ -605,10 +605,47 @@ Never change `execution.mode` yourself. Every `order` entry must carry
 idempotency check matches against either a `risk_check` or `order`
 entry.
 
+## Step 8.5 — Sync the FriesTrader watchlist
+
+Runs right after Step 8's buy execution and before Step 9's logging.
+Keeps a Robinhood watchlist named `FriesTrader` (this exact
+`display_name`, not `universe.watchlist_name`) holding every stock this
+cycle committed to buy. It is add-only and a convenience list: nothing in
+this pipeline reads it back, and it never changes a candidate, a sizing,
+or an order.
+
+`to_add` = the `symbol` of every Step 8 `"stage": "order"` entry that
+has `"side": "buy"` **and** either `"placed": true` (live mode) or
+`"would_execute": true` (dry-run mode) — i.e. the buy passed Step 7's
+risk checks, the `review_equity_order` review raised no blocking alert,
+and it either went through the live-order gate or would have. Both new
+entries and top-ups count. Exclude every candidate that was rejected in
+Step 7, whose review raised a blocking alert, or whose order was not
+placed because the live-order gate was closed in live mode. Sells never
+add anything. Use only this cycle's own `order` entries.
+
+If `to_add` is empty, skip this step entirely (no watchlist calls, no
+`watchlist_sync` line). Otherwise:
+1. `get_watchlists`, match `display_name == "FriesTrader"` to get its
+   `list_id`. If there is no match, `create_watchlist` with
+   `display_name="FriesTrader"` and use the returned id (note
+   `"created": true`).
+2. `get_watchlist_items` on that `list_id` for the symbols already on it.
+3. `to_add` minus symbols already on the list. If any remain, one
+   `add_to_watchlist` call with `symbols`. Symbols already on the list are
+   skipped, not re-added.
+
+Never remove anything from the list, and never touch any other
+watchlist. This step must never block or fail the run: on any error
+(including a permission error on `create_watchlist`/`add_to_watchlist`),
+do not retry, log it in the `watchlist_sync` line's `errors`, and
+continue to Step 9 as normal.
+
 ## Step 9 — Logging
 
 Append every decision to `trade_log.jsonl` — one JSON line each:
-`stop_loss`, `take_profit`, `conviction_trim`, `loss_limit_check`, `risk_check` (pass/fail,
+`stop_loss`, `take_profit`, `conviction_trim`, `loss_limit_check`, `watchlist_sync` (only if
+Step 8.5 ran), `risk_check` (pass/fail,
 including Step 7's weekend-gap rejections, buy-gate rejections
 (price-gap, extension, wash-sale, sell re-entry lock), and top-up
 evaluations), and `order` stages, matching the shape already in
@@ -620,6 +657,14 @@ evaluations), and `order` stages, matching the shape already in
 — never guessed), no date prefix. Separate from `"date"`/`"proposal_date"`
 — for readability only, never used for idempotency, dry-run count, or
 other logic; only `date` and `proposal_date` are mechanical.
+
+When Step 8.5 ran, log one `"stage": "watchlist_sync"` line (before the
+final `cycle_summary`):
+```json
+{"date": "YYYY-MM-DD", "timestamp": "HH:mm:ss", "stage": "watchlist_sync", "list": "FriesTrader", "mode": "dry_run|live", "created": false, "added": ["RNG"], "skipped_already_present": [], "errors": []}
+```
+`added`/`skipped_already_present` are plain symbol lists (empty if none);
+`errors` holds a short message per failed call.
 
 **Always append exactly one final line per run**, even if nothing else
 happened:
@@ -639,7 +684,8 @@ each held position's stop-loss/take-profit status (symbol, `stop_pct`
 used, gain/drawdown, and whether it triggered, fired a tier, sold, or
 is just holding); each new-entry/top-up candidate considered and its
 outcome in one line (approved and sized, or rejected and why); and any
-orders actually placed (symbol, buy/sell, dollar amount). This is a
+orders actually placed (symbol, buy/sell, dollar amount); and, when
+Step 8.5 ran, which symbols were added to the FriesTrader watchlist. This is a
 readable render of what this cycle already decided — no new research,
 no re-deciding anything. Convenience view only, not a second audit
 trail: `trade_log.jsonl` is still the source of truth, and if the two
@@ -669,6 +715,9 @@ stalling the run with real fills never pushed.
 - Never change `execution.mode` or any `risk_rules.json` value.
 - Never call `place_equity_order` unless the live-order gate (Step 6 for
   sells, Step 8 for buys — same conditions) is open at that moment.
+- The only account-changing calls besides orders are Step 8.5's
+  `create_watchlist`/`add_to_watchlist` on the `FriesTrader` list. Never
+  remove items from it or touch any other watchlist.
 - A "high conviction" thesis never overrides a failed mechanical check.
 - If required data can't be retrieved (portfolio, positions, P&L history),
   fail safe — treat the check as failed/halt new entries — and log exactly
