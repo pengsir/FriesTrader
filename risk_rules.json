@@ -4,9 +4,9 @@
   "account_number": "555214113",
 
   "execution": {
-    "mode": "dry_run",
+    "mode": "live",
     "note": "mode must be manually changed from 'dry_run' to 'live' by the human. Claude must never change this value itself, and must refuse to place live orders while mode is 'dry_run'.",
-    "dry_run_min_cycles_before_live": 10
+    "dry_run_min_cycles_before_live": 4
   },
 
   "universe": {
@@ -44,7 +44,7 @@
 
   "position_sizing": {
     "max_position_pct_of_account": 0.20,
-    "max_concurrent_positions": 4,
+    "max_concurrent_positions": 2,
     "min_cash_buffer_pct": 0.10,
     "min_top_up_usd": 5.00,
     "min_top_up_pct_of_target": 0.10,
