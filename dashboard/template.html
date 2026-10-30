@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FriesTrader Dashboard</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#1c2128;--mut:#6b7380;--line:#e3e6ea;--acc:#2f6fed;--ok:#1a8f4c;--bad:#d1383d;--warn:#c98a00}
+@media(prefers-color-scheme:dark){:root{--bg:#12151a;--card:#1b1f26;--fg:#e6e9ee;--mut:#8b94a3;--line:#2b313b;--acc:#6b9bff;--ok:#43c47c;--bad:#ff6b70;--warn:#e5b13a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:14px 20px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+h1{font-size:17px;margin:0 8px 0 0}
+nav button,.chip{border:1px solid var(--line);background:var(--card);color:var(--fg);padding:5px 12px;border-radius:6px;cursor:pointer;font:inherit}
+nav button.on,.chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+input,select{border:1px solid var(--line);background:var(--card);color:var(--fg);padding:4px 8px;border-radius:6px;font:inherit}
+main{padding:20px;max-width:1200px;margin:auto}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px}
+.kpi .v{font-size:24px;font-weight:600}.kpi .l{color:var(--mut);font-size:12px}
+.row2{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));margin-bottom:16px}
+h2{font-size:14px;margin:0 0 10px}h3{font-size:13px;margin:14px 0 6px;color:var(--mut)}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-weight:500;font-size:12px}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;border:1px solid var(--line)}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}.mut{color:var(--mut)}
+.long{background:rgba(26,143,76,.15);color:var(--ok)}.avoid,.exit_existing{background:rgba(209,56,61,.15);color:var(--bad)}
+details{margin:2px 0}summary{cursor:pointer}
+svg text{fill:var(--mut);font-size:11px}
+.legend span{margin-right:12px;font-size:12px;color:var(--mut)}.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+.empty{color:var(--mut);padding:20px;text-align:center}
+.funnel{display:flex;gap:6px;flex-wrap:wrap}.funnel div{flex:1;min-width:90px;text-align:center;padding:8px;border:1px solid var(--line);border-radius:6px}.funnel b{display:block;font-size:20px}
+</style>
+</head>
+<body>
+<header>
+  <h1>FriesTrader</h1>
+  <nav><button id="tDay" class="on">每日 Daily</button><button id="tRange">历史 History</button></nav>
+  <span id="dayCtl"><button class="chip" id="prev">◀</button> <input type="date" id="day"> <button class="chip" id="next">▶</button></span>
+  <span id="rangeCtl" hidden>
+    <input type="date" id="from"> – <input type="date" id="to">
+    <button class="chip" data-r="7">7天</button><button class="chip" data-r="30">30天</button><button class="chip" data-r="0">全部</button>
+  </span>
+  <span class="mut" id="gen" style="margin-left:auto"></span>
+</header>
+<main id="app"></main>
+<script>
+const DATA=/*__DATA__*/null;
+const A=DATA.phaseA,B=DATA.phaseB;
+const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dates=[...new Set([...A.map(r=>r.date),...B.map(r=>r.date)])].filter(Boolean).sort();
+const bDay=d=>B.filter(r=>r.date===d), aDay=d=>A.filter(r=>r.date===d);
+const money=v=>v==null?"–":"$"+Number(v).toLocaleString(undefined,{maximumFractionDigits:2});
+const pct=v=>v==null?"–":(v*100).toFixed(2)+"%";
+let mode="day",day=dates[dates.length-1],from=dates[0],to=dates[dates.length-1];
+
+function bars(items,keys,colors,h=170){ // items:[{label,vals:{k:n}}] stacked
+  if(!items.length)return'<div class="empty">无数据</div>';
+  const w=Math.max(360,items.length*44),max=Math.max(1,...items.map(i=>keys.reduce((s,k)=>s+(i.vals[k]||0),0)));
+  const bw=Math.min(28,w/items.length-8);let o=`<svg viewBox="0 0 ${w} ${h+22}" width="100%" role="img">`;
+  items.forEach((it,i)=>{const x=i*(w/items.length)+(w/items.length-bw)/2;let y=h;
+    keys.forEach((k,j)=>{const v=it.vals[k]||0,bh=v/max*(h-10);if(v){y-=bh;o+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" fill="${colors[j]}" rx="2"><title>${it.label} ${k}: ${v}</title></rect>`}});
+    o+=`<text x="${x+bw/2}" y="${h+14}" text-anchor="middle">${it.label.slice(5)}</text>`});
+  return o+'</svg>'+'<div class="legend">'+keys.map((k,j)=>`<span><i style="background:${colors[j]}"></i>${k}</span>`).join("")+'</div>'}
+function line(pts,h=170,fmt=money){ // pts:[{label,v}]
+  if(pts.length<1)return'<div class="empty">无数据</div>';
+  const w=Math.max(360,pts.length*60),lo=Math.min(...pts.map(p=>p.v)),hi=Math.max(...pts.map(p=>p.v)),sp=(hi-lo)||1;
+  const X=i=>pts.length==1?w/2:20+i*(w-40)/(pts.length-1),Y=v=>10+(h-20)*(1-(v-lo)/sp);
+  let o=`<svg viewBox="0 0 ${w} ${h+22}" width="100%" role="img"><polyline fill="none" stroke="var(--acc)" stroke-width="2" points="${pts.map((p,i)=>X(i)+","+Y(p.v)).join(" ")}"/>`;
+  pts.forEach((p,i)=>o+=`<circle cx="${X(i)}" cy="${Y(p.v)}" r="3.5" fill="var(--acc)"><title>${p.label}: ${fmt(p.v)}</title></circle><text x="${X(i)}" y="${h+14}" text-anchor="middle">${p.label.slice(5)}</text>`);
+  return o+`<text x="2" y="12">${fmt(hi)}</text><text x="2" y="${h-2}">${fmt(lo)}</text></svg>`}
+
+function tag(d){return`<span class="tag ${esc(d)}">${esc(d)}</span>`}
+function aStats(r){const s=r.screened,p=s.filter(x=>x.passed_filters),sig=p.filter(x=>x.signal_check&&x.signal_check!=="none");
+  const dec=d=>r.theses.filter(t=>t.direction===d).length;
+  return{screened:s.length,passed:p.length,signal:sig.length,theses:r.theses.length,long:dec("long"),avoid:dec("avoid"),exit:dec("exit_existing")}}
+function bStats(rows){const rc=rows.filter(r=>r.stage==="risk_check"),od=rows.filter(r=>r.stage==="order"),cs=rows.filter(r=>r.stage==="cycle_summary");
+  return{rcPass:rc.filter(r=>r.passed).length,rcFail:rc.filter(r=>!r.passed).length,placed:od.filter(o=>o.placed).length,dry:od.filter(o=>!o.placed&&o.would_execute).length,cycles:cs.length,
+    value:(rows.filter(r=>r.stage==="loss_limit_check").pop()||{}).total_value}}
+
+function renderA(r){
+  const st=aStats(r);let o=`<div class="card"><h2>Phase A · ${esc(r.date)} ${esc(r.timestamp)}</h2>
+  <div class="funnel"><div><b>${st.screened}</b>筛选</div><div><b>${st.passed}</b>通过过滤</div><div><b>${st.signal}</b>有信号</div><div><b>${st.theses}</b>thesis</div><div><b class="ok">${st.long}</b>long</div><div><b class="bad">${st.avoid+st.exit}</b>avoid/exit</div></div>`;
+  o+='<h3>Thesis</h3>';
+  o+=r.theses.length?'<table><tr><th>标的</th><th>决定</th><th>信心</th><th>摘要</th></tr>'+r.theses.map(t=>`<tr><td><b>${esc(t.symbol)}</b></td><td>${tag(t.direction)}</td><td>${esc(t.conviction||"–")}</td><td><details><summary>${esc((t.thesis||"").slice(0,90))}…</summary><p>${esc(t.thesis)}</p><p><b>失效条件:</b> ${esc(t.invalidation)}</p><p class="mut">${esc(t.sources)}</p></details></td></tr>`).join("")+'</table>':'<div class="empty">本次无 thesis</div>';
+  o+='<h3>筛选明细</h3><details><summary>展开 '+r.screened.length+' 条</summary><table><tr><th>标的</th><th>来源</th><th>结果</th><th>说明</th></tr>'+r.screened.map(s=>`<tr><td>${esc(s.symbol)}</td><td>${esc(s.source)}</td><td class="${s.passed_filters?"ok":"bad"}">${s.passed_filters?"通过":"排除"}</td><td class="mut">${esc(s.reason||s.signal_check||"")}</td></tr>`).join("")+'</table></details></div>';
+  return o}
+function renderB(rows,date){
+  if(!rows.length)return`<div class="card"><h2>Phase B · ${date}</h2><div class="empty">当日无 Phase B 记录</div></div>`;
+  const by=s=>rows.filter(r=>r.stage===s);let o=`<div class="card"><h2>Phase B · ${esc(date)} ${esc(rows[0].timestamp)}</h2>`;
+  const cs=by("cycle_summary")[0];
+  if(cs)o+=`<p>模式 <b>${esc(cs.mode)}</b> · 候选 ${cs.candidates_considered} · 审核订单 ${cs.orders_reviewed} · 下单 <b>${cs.orders_placed}</b></p>`;
+  by("loss_limit_check").forEach(l=>o+=`<p>总值 ${money(l.total_value)} · 持仓成本 ${money(l.open_position_cost_basis)} · 当日 ${pct(l.daily_pnl_pct)} · 当周 ${pct(l.weekly_pnl_pct)} · 熔断 <span class="${l.entries_halted?"bad":"ok"}">${l.entries_halted?"是":"否"}</span></p>`);
+  ["stop_loss","take_profit","conviction_trim","exit_existing"].forEach(s=>{const x=by(s);if(x.length)o+=`<h3>${s}</h3><pre>${esc(x.map(v=>JSON.stringify(v)).join("\n"))}</pre>`});
+  const rc=by("risk_check");o+='<h3>买入风控</h3>';
+  o+=rc.length?'<table><tr><th>标的</th><th>结果</th><th>信心</th><th>金额</th><th>价差</th><th>延伸</th><th>原因</th></tr>'+rc.map(r=>`<tr><td><b>${esc(r.symbol)}</b></td><td class="${r.passed?"ok":"bad"}">${r.passed?"通过":"拒绝"}</td><td>${esc(r.conviction||"")}</td><td>${money(r.dollar_amount)}</td><td>${pct(r.entry_gap_pct)}</td><td>${pct(r.extension_pct)}</td><td class="mut">${esc(r.reason||r.notes||"")}</td></tr>`).join("")+'</table>':'<div class="empty">无</div>';
+  const od=by("order");o+='<h3>订单</h3>';
+  o+=od.length?'<table><tr><th>标的</th><th>方向</th><th>状态</th><th>金额</th><th>成交价</th><th>数量</th><th>警报</th></tr>'+od.map(r=>`<tr><td><b>${esc(r.symbol)}</b></td><td>${esc(r.side)}</td><td>${r.placed?`<span class="ok">已成交/已下单</span> ${esc(r.order_state||"")}`:r.would_execute?'<span class="warn">dry-run</span>':"–"}</td><td>${money(r.dollar_amount)}</td><td>${r.fill_price?money(r.fill_price):money(r.quote_ask)}</td><td>${esc(r.fill_quantity??r.quantity??"")}</td><td class="mut">${esc(r.review_alerts||"")}</td></tr>`).join("")+'</table>':'<div class="empty">无订单</div>';
+  by("watchlist_sync").forEach(w=>o+=`<h3>Watchlist 同步</h3><p>${esc(w.list)} · 新增 ${esc((w.added||[]).join(", ")||"无")} · 已存在 ${esc((w.skipped_already_present||[]).join(", ")||"无")} · 错误 ${(w.errors||[]).length}</p>`);
+  return o+'</div>'}
+
+function viewDay(){
+  const br=bDay(day);
+  // Phase B consumes the previous Phase A's proposals; proposal_date says which run.
+  const pd=(br.find(r=>r.proposal_date)||{}).proposal_date;
+  let ar,title;
+  if(br.length){
+    const src=pd||[...new Set(A.map(r=>r.date))].filter(d=>d<day).pop();
+    ar=src?aDay(src).slice(-1):[];title=`上一交易日 Phase A(下方 Phase B 使用的提案,日期 ${src||"未知"})`;
+  }else{ar=aDay(day).slice(-1);title="当日 Phase A(供下一个交易日的 Phase B 使用,当日 Phase B 尚未运行)"}
+  const aHtml=ar.length?`<h3>${title}</h3>`+ar.map(renderA).join(""):`<div class="card"><h2>${title}</h2><div class="empty">无 Phase A 记录</div></div>`;
+  $("#app").innerHTML=aHtml+"<div style='height:14px'></div>"+renderB(br,day)}
+
+function viewRange(){
+  const ds=dates.filter(d=>d>=from&&d<=to);
+  const bs=ds.map(d=>({d,s:bStats(bDay(d))})),as=ds.map(d=>{const r=aDay(d);return{d,s:r.length?aStats(r[r.length-1]):null}});
+  const tot=bs.reduce((a,x)=>({pass:a.pass+x.s.rcPass,fail:a.fail+x.s.rcFail,placed:a.placed+x.s.placed,dry:a.dry+x.s.dry}),{pass:0,fail:0,placed:0,dry:0});
+  const sym={};ds.forEach(d=>aDay(d).forEach(r=>r.theses.forEach(t=>{(sym[t.symbol]??={n:0,long:0,last:""});sym[t.symbol].n++;if(t.direction==="long")sym[t.symbol].long++;sym[t.symbol].last=d})));
+  const orders=B.filter(r=>r.stage==="order"&&r.date>=from&&r.date<=to);
+  let o=`<div class="grid">
+  <div class="card kpi"><div class="v">${ds.length}</div><div class="l">交易日</div></div>
+  <div class="card kpi"><div class="v">${as.filter(x=>x.s).length}</div><div class="l">Phase A 运行日</div></div>
+  <div class="card kpi"><div class="v">${tot.pass}/${tot.pass+tot.fail}</div><div class="l">风控通过/总数</div></div>
+  <div class="card kpi"><div class="v">${tot.placed}</div><div class="l">真实下单</div></div>
+  <div class="card kpi"><div class="v">${tot.dry}</div><div class="l">dry-run 模拟下单</div></div></div>
+  <div class="row2">
+  <div class="card"><h2>Phase A 每日漏斗</h2>${bars(as.filter(x=>x.s).map(x=>({label:x.d,vals:{long:x.s.long,"avoid/exit":x.s.avoid+x.s.exit,"仅信号":Math.max(0,x.s.signal-x.s.theses)}})),["long","avoid/exit","仅信号"],["#1a8f4c","#d1383d","#9aa3b2"])}</div>
+  <div class="card"><h2>Phase B 风控结果</h2>${bars(bs.map(x=>({label:x.d,vals:{通过:x.s.rcPass,拒绝:x.s.rcFail}})),["通过","拒绝"],["#1a8f4c","#d1383d"])}</div>
+  <div class="card"><h2>账户总值</h2>${line(bs.filter(x=>x.s.value!=null).map(x=>({label:x.d,v:x.s.value})))}</div>
+  <div class="card"><h2>每日下单</h2>${bars(bs.map(x=>({label:x.d,vals:{真实:x.s.placed,"dry-run":x.s.dry}})),["真实","dry-run"],["#2f6fed","#c98a00"])}</div></div>
+  <div class="card"><h2>标的出现次数</h2><table><tr><th>标的</th><th>thesis 次数</th><th>long 次数</th><th>最近</th></tr>${Object.entries(sym).sort((a,b)=>b[1].long-a[1].long||b[1].n-a[1].n).map(([k,v])=>`<tr><td><b>${esc(k)}</b></td><td>${v.n}</td><td>${v.long}</td><td>${v.last}</td></tr>`).join("")}</table></div>
+  <div style="height:14px"></div><div class="card"><h2>订单历史</h2>${orders.length?'<table><tr><th>日期</th><th>标的</th><th>方向</th><th>模式</th><th>状态</th><th>金额</th><th>成交价</th></tr>'+orders.map(r=>`<tr><td>${r.date} ${r.timestamp}</td><td><b>${esc(r.symbol)}</b></td><td>${esc(r.side)}</td><td>${esc(r.mode)}</td><td>${r.placed?'<span class="ok">已下单</span>':r.would_execute?'<span class="warn">dry-run</span>':"–"}</td><td>${money(r.dollar_amount)}</td><td>${r.fill_price?money(r.fill_price):"–"}</td></tr>`).join("")+'</table>':'<div class="empty">无订单</div>'}</div>
+  <div style="height:14px"></div><div class="card"><h2>每日明细</h2>${ds.slice().reverse().map(d=>`<a href="#" data-d="${d}" class="chip" style="margin:2px;display:inline-block;text-decoration:none">${d}</a>`).join("")}</div>`;
+  $("#app").innerHTML=o;
+  document.querySelectorAll("[data-d]").forEach(a=>a.onclick=e=>{e.preventDefault();day=a.dataset.d;setMode("day")})}
+
+function setMode(m){mode=m;$("#tDay").classList.toggle("on",m==="day");$("#tRange").classList.toggle("on",m==="range");
+  $("#dayCtl").hidden=m!=="day";$("#rangeCtl").hidden=m!=="range";$("#day").value=day;$("#from").value=from;$("#to").value=to;m==="day"?viewDay():viewRange()}
+$("#tDay").onclick=()=>setMode("day");$("#tRange").onclick=()=>setMode("range");
+$("#day").onchange=e=>{day=e.target.value;viewDay()};
+const step=n=>{const i=dates.indexOf(day);const j=Math.min(dates.length-1,Math.max(0,(i<0?dates.length-1:i)+n));day=dates[j];$("#day").value=day;viewDay()};
+$("#prev").onclick=()=>step(-1);$("#next").onclick=()=>step(1);
+$("#from").onchange=e=>{from=e.target.value;viewRange()};$("#to").onchange=e=>{to=e.target.value;viewRange()};
+document.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{const n=+b.dataset.r;to=dates[dates.length-1];from=n?new Date(new Date(to)-n*864e5).toISOString().slice(0,10):dates[0];setMode("range")});
+$("#gen").textContent="数据截至 "+(dates[dates.length-1]||"–")+" · 只读";
+if(dates.length)setMode("day");else $("#app").innerHTML='<div class="empty">没有数据</div>';
+</script>
+</body>
+</html>
