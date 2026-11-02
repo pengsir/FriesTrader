@@ -44,7 +44,7 @@
 
   "position_sizing": {
     "max_position_pct_of_account": 0.20,
-    "max_concurrent_positions": 2,
+    "max_concurrent_positions": 4,
     "min_cash_buffer_pct": 0.10,
     "min_top_up_usd": 5.00,
     "min_top_up_pct_of_target": 0.10,

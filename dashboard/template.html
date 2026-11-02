@@ -90,7 +90,13 @@ function renderB(rows,date){
   const cs=by("cycle_summary")[0];
   if(cs)o+=`<p>模式 <b>${esc(cs.mode)}</b> · 候选 ${cs.candidates_considered} · 审核订单 ${cs.orders_reviewed} · 下单 <b>${cs.orders_placed}</b></p>`;
   by("loss_limit_check").forEach(l=>o+=`<p>总值 ${money(l.total_value)} · 持仓成本 ${money(l.open_position_cost_basis)} · 当日 ${pct(l.daily_pnl_pct)} · 当周 ${pct(l.weekly_pnl_pct)} · 熔断 <span class="${l.entries_halted?"bad":"ok"}">${l.entries_halted?"是":"否"}</span></p>`);
-  ["stop_loss","take_profit","conviction_trim","exit_existing"].forEach(s=>{const x=by(s);if(x.length)o+=`<h3>${s}</h3><pre>${esc(x.map(v=>JSON.stringify(v)).join("\n"))}</pre>`});
+  const trig=r=>r.triggered?`<span class="bad">触发</span> ${esc(r.action||"")}`:`<span class="ok">未触发</span> <span class="mut">${esc(r.action||"")}</span>`;
+  const sell={
+    stop_loss:["止损检查",[["标的",r=>`<b>${esc(r.symbol)}</b>`],["成本",r=>money(r.entry_price)],["现价",r=>money(r.current_price)],["回撤",r=>pct(r.drawdown_pct)],["止损线",r=>pct(r.stop_pct_used)],["结果",trig],["备注",r=>`<span class="mut">${esc(r.notes||"")}</span>`]]],
+    take_profit:["止盈检查",[["标的",r=>`<b>${esc(r.symbol)}</b>`],["盈亏",r=>`<span class="${r.gain_pct>=0?"ok":"bad"}">${pct(r.gain_pct)}</span>`],["档位",r=>esc((r.tiers_status||[]).map(t=>typeof t==="object"?JSON.stringify(t):pct(t)).join(" / "))],["结果",trig],["备注",r=>`<span class="mut">${esc(r.notes||"")}</span>`]]],
+    conviction_trim:["信念减仓检查",[["标的",r=>`<b>${esc(r.symbol)}</b>`],["超配",r=>pct(r.overweight_pct)],["连续周期",r=>esc(r.consecutive_cycles??"–")],["本期达标",r=>r.qualifies_this_cycle?"是":"否"],["结果",trig],["备注",r=>`<span class="mut">${esc(r.notes||"")}</span>`]]],
+    exit_existing:["主动退出",[["标的",r=>`<b>${esc(r.symbol)}</b>`],["结果",trig],["原因",r=>`<span class="mut">${esc(r.reason||r.notes||"")}</span>`]]]};
+  Object.entries(sell).forEach(([st,[name,cols]])=>{const x=by(st);if(x.length)o+=`<h3>${name}</h3><table><tr>${cols.map(c=>`<th>${c[0]}</th>`).join("")}</tr>${x.map(r=>"<tr>"+cols.map(c=>`<td>${c[1](r)}</td>`).join("")+"</tr>").join("")}</table>`});
   const rc=by("risk_check");o+='<h3>买入风控</h3>';
   o+=rc.length?'<table><tr><th>标的</th><th>结果</th><th>信心</th><th>金额</th><th>价差</th><th>延伸</th><th>原因</th></tr>'+rc.map(r=>`<tr><td><b>${esc(r.symbol)}</b></td><td class="${r.passed?"ok":"bad"}">${r.passed?"通过":"拒绝"}</td><td>${esc(r.conviction||"")}</td><td>${money(r.dollar_amount)}</td><td>${pct(r.entry_gap_pct)}</td><td>${pct(r.extension_pct)}</td><td class="mut">${esc(r.reason||r.notes||"")}</td></tr>`).join("")+'</table>':'<div class="empty">无</div>';
   const od=by("order");o+='<h3>订单</h3>';
