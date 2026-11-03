@@ -290,7 +290,14 @@ This template gets improvements over time.
 Two schedules need to fire: Phase A around 2:30pm Pacific on weekdays
 (hand Claude Code `PHASE_A_TASK.md` to execute), and Phase B around
 6:35am Pacific on weekdays, 5 minutes after market open (hand it
-`PHASE_B_TASK.md`). Each run is a fresh Claude Code session pointed at
+`PHASE_B_TASK.md`). Cloud routine cron expressions are fixed UTC and
+don't follow daylight saving, so each routine fires twice per weekday
+(Phase A `30 21,22 * * 1-5`, Phase B `35 13,14 * * 1-5`) and its prompt
+starts with a time gate: it checks `TZ='America/Los_Angeles' date +'%H%M'`
+and exits immediately unless the time is inside the intended window
+(Phase A 14:15-15:00, Phase B 06:30-07:15). Exactly one of the two fires
+passes, so Phase A runs at 2:30pm and Phase B at 6:35am Pacific all year.
+Each run is a fresh Claude Code session pointed at
 this repo — no state needs to persist locally between runs, since the
 repo itself (`risk_rules.json`, `pending_proposals.jsonl`,
 `trade_log.jsonl`) is what's read and written each time.
