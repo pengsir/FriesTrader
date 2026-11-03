@@ -1,19 +1,24 @@
-# 2026-11-02
+# 2026-11-03
 
-**Mode:** live (dry-run cycle gate met, no orders needed this cycle)
+**Mode:** live (dry-run cycle gate met)
 
 ## Loss-limit check
-Daily and weekly realized P&L 0.0%; entries not halted. net_deposits_usd = $1000.00 (total value $1000.71, equity $240.71, cost basis $240.00, realized all-time $0).
+Daily and weekly realized P&L 0.0%; entries not halted. net_deposits_usd = $1000.00 (total value $996.98, equity $236.98, cost basis $240.00, realized all-time $0).
 
 ## Held positions
-- RNG: $79.45 vs avg cost $80.82 (-1.70%); stop 8.50% (volatility-scaled), not triggered; no take-profit tier; holding.
-- PEB: $21.90 vs avg cost $21.43 (+2.19%); no stop/take-profit trigger; holding.
+- RNG: $76.11 vs avg cost $80.82 (-5.83%); stop 8.69% (volatility-scaled), not triggered; no take-profit tier; holding.
+- PEB: $22.14 vs avg cost $21.43 (+3.31%); no stop/take-profit trigger; holding.
 - Conviction trim: neither position overweight enough; holding.
 
 ## Candidates
-- ETSY (new): rejected, no open slots (2 of 2 held).
-- RNG (top-up): rejected, headroom $2.12 is below the $12.01 minimum top-up.
+- DOV (new, medium): approved, $119.64 buy.
+- EXLS (new, medium): approved, $119.64 buy.
+- RNG (top-up): rejected, headroom $6.63 is below the $11.96 minimum top-up.
 - PEB (top-up): rejected, already at or above target size.
 
 ## Orders
-None placed. No watchlist changes.
+- BUY DOV $119.64: filled 0.550575 sh @ $217.30.
+- BUY EXLS $119.64: filled 2.864613 sh @ $41.76.
+
+## Watchlist
+Added DOV and EXLS to FriesTrader.
