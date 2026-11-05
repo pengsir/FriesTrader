@@ -1,26 +1,8 @@
-# 2026-11-04
+# 2026-11-05
 
-**Mode:** live (dry-run cycle gate met)
-
-## Loss-limit check
-Daily and weekly realized P&L 0.0%; entries not halted. net_deposits_usd = $999.99 (total value $1004.72, equity $484.00, cost basis $479.27, realized all-time $0).
-
-## Held positions
-- RNG: $79.37 vs avg cost $80.82 (-1.80%); stop 8.80% (volatility-scaled), not triggered; no take-profit tier; holding.
-- PEB: $22.21 vs avg cost $21.43 (+3.64%); no stop/take-profit trigger; holding.
-- DOV: $216.75 vs avg cost $217.30 (-0.26%); stop 5.00%, not triggered; holding.
-- EXLS: $42.75 vs avg cost $41.76 (+2.37%); no stop/take-profit trigger; holding.
-- Conviction trim: no position overweight enough; holding.
-
-## Candidates
-- GFL (new, medium): approved, $120.57 buy.
-- ETSY (new, medium): rejected, gapped 6.5% over thesis price and 12.4% above its 20-day average.
-- EHC (new, medium): rejected, 10.2% above its 20-day average (limit 10%).
-- RNG, DOV (top-ups): rejected, headroom below $12.06 minimum top-up.
-- EXLS, PEB (top-ups): rejected, already at or above target size.
-
-## Orders
-- BUY GFL $120.57: filled 2.640026 sh @ $45.67.
-
-## Watchlist
-Added GFL to FriesTrader.
+- **Loss-limit check:** passed (daily 0.0%, weekly 0.0%); net deposits $1000.00. Entries not halted.
+- **Stops / take-profit / trim:** all 5 holdings (RNG, PEB, DOV, EXLS, GFL) hold; no stop, tier or trim triggered. RNG is -5.6% vs 8.7% stop; DOV -1.7%, GFL -0.4% vs 5% stops.
+- **New entries:** RAL approved and bought, $119.88 (filled @ $69.16). WEC approved and bought, $119.88 (filled @ $119.49). CHD rejected: cash buffer would fall below 10%.
+- **Top-ups:** RNG, DOV skipped (headroom below minimum); GFL, EXLS, PEB already at/above target.
+- **Orders placed:** buy RAL $119.88, buy WEC $119.88 (live).
+- **FriesTrader watchlist:** added RAL, WEC.
