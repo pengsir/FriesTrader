@@ -1,8 +1,8 @@
-# 2026-11-05
+# 2026-11-06
 
-- **Loss-limit check:** passed (daily 0.0%, weekly 0.0%); net deposits $1000.00. Entries not halted.
-- **Stops / take-profit / trim:** all 5 holdings (RNG, PEB, DOV, EXLS, GFL) hold; no stop, tier or trim triggered. RNG is -5.6% vs 8.7% stop; DOV -1.7%, GFL -0.4% vs 5% stops.
-- **New entries:** RAL approved and bought, $119.88 (filled @ $69.16). WEC approved and bought, $119.88 (filled @ $119.49). CHD rejected: cash buffer would fall below 10%.
-- **Top-ups:** RNG, DOV skipped (headroom below minimum); GFL, EXLS, PEB already at/above target.
-- **Orders placed:** buy RAL $119.88, buy WEC $119.88 (live).
-- **FriesTrader watchlist:** added RAL, WEC.
+- **Loss-limit check:** passed (daily -2.12%, weekly -2.12%); net deposits $1000.00. Entries not halted.
+- **Stops:** RNG stop triggered (-10.5% vs 9.07% stop) and DOV stop triggered (-7.4% vs 5% stop); both fully sold live (RNG @ $72.55, DOV @ $201.18), realized -$21.16. PEB, RAL, WEC hold (below cost but within stops); EXLS, GFL at a gain. No take-profit tier or conviction trim fired.
+- **New entries:** REYN approved and bought, $115.84 (filled @ $23.93). CNC approved and bought, $115.84 (filled @ $72.31). VRSN rejected: cash buffer would fall below 10%.
+- **Top-ups:** PEB, WEC, GFL, EXLS, RAL skipped (already at/above target). RNG, DOV not eligible (stop fired this cycle).
+- **Orders placed:** sell RNG (full), sell DOV (full), buy REYN $115.84, buy CNC $115.84 (live).
+- **FriesTrader watchlist:** added REYN, CNC.
