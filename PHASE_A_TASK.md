@@ -201,6 +201,12 @@ resurface it on its own.
 
 For each flagged candidate, produce the thesis record from `README.md`
 (symbol, date, thesis, conviction, invalidation, direction).
+- **Language: write the `thesis` and `invalidation` text in Chinese
+  (简体中文).** Keep every other field in English exactly as specified —
+  `symbol`, `direction`, `conviction`, `stage`, `sources`, `risk_flags`,
+  etc. — since downstream scripts and Phase B match on those values.
+  Tickers, company names, figures and quoted source titles may stay in
+  their original form.
 - **No price targets.**
 - **No forecasting as fact** — "this suggests..." not "this will...".
 
