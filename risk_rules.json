@@ -18,7 +18,7 @@
 
     "min_avg_daily_volume": 1000000,
     "min_market_cap_usd": 2000000000,
-    "max_market_cap_usd": 50000000000,
+    "max_market_cap_usd": 100000000000,
 
     "penny_stock_filter_enabled": true,
     "penny_stock_price_threshold_usd": 5.00,
