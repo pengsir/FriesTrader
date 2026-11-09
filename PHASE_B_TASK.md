@@ -14,6 +14,24 @@ operates this pipeline — after being warned that an unattended
 scheduled task has no human confirmation at the moment of execution.**
 Do not add, remove, or loosen any gate condition on your own judgment.
 
+## Language of human-readable text
+
+Write all human-readable free text in Chinese (简体中文): the `reason`,
+`notes`, `halt_reason` and `fallback_reason` fields in `trade_log.jsonl`,
+and the whole of `trade_log_recent.md`. This overrides any "as-is" /
+verbatim instruction below: where a script returns an English
+`notes`/`halt_reason`/`fallback_reason`, or this spec gives an English
+`reason` template, log the same facts in Chinese instead (translate
+the template, keep every number, threshold, ticker, date and config key
+such as `entry_price_gap.max_pct` unchanged).
+
+Keep everything machine-read in English exactly as specified: field
+names, `stage` values, `action` values, `blocking_conditions`,
+`conviction`, `position_action`, `mode`, `side`, `order_state`,
+`sources`, and anything passed to a script as an argument (including
+`--last-sell-reason`, which may be whatever text the earlier sell
+logged).
+
 ## Step 0 — Load state (do this first, every run)
 
 1. Read `risk_rules.json` **fresh** — never cache across runs. Use its
