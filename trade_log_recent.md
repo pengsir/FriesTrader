@@ -1,8 +1,23 @@
-# 2026-11-06
+# 2026-11-09
 
-- **Loss-limit check:** passed (daily -2.12%, weekly -2.12%); net deposits $1000.00. Entries not halted.
-- **Stops:** RNG stop triggered (-10.5% vs 9.07% stop) and DOV stop triggered (-7.4% vs 5% stop); both fully sold live (RNG @ $72.55, DOV @ $201.18), realized -$21.16. PEB, RAL, WEC hold (below cost but within stops); EXLS, GFL at a gain. No take-profit tier or conviction trim fired.
-- **New entries:** REYN approved and bought, $115.84 (filled @ $23.93). CNC approved and bought, $115.84 (filled @ $72.31). VRSN rejected: cash buffer would fall below 10%.
-- **Top-ups:** PEB, WEC, GFL, EXLS, RAL skipped (already at/above target). RNG, DOV not eligible (stop fired this cycle).
-- **Orders placed:** sell RNG (full), sell DOV (full), buy REYN $115.84, buy CNC $115.84 (live).
-- **FriesTrader watchlist:** added REYN, CNC.
+**Mode:** live (gate open, 4 dry-run days validated). No orders reviewed or placed this cycle.
+
+## Loss-limit check
+- Daily P&L 0.00%, weekly -2.12% (limits 5% / 10%) -> entries not halted. Net deposits $999.99 (total value $976.76, equity $829.57, cost basis $831.64, all-time realized -$21.16).
+
+## Held positions (stop-loss / take-profit / conviction trim)
+- RAL: -1.4% vs cost, stop 11.08% -> holding. Overweight vs low-conviction target (1 of 3 cycles needed for trim).
+- WEC: -3.5%, stop 5.00% -> holding.
+- CNC: -3.4%, stop 9.37% -> holding.
+- PEB +0.6%, EXLS +2.8%, GFL +0.9%, REYN +0.4%: in gain, no stop computed, no take-profit tier reached.
+
+## New entries / top-ups considered
+- HRB: rejected - earnings today after close (blackout).
+- PFGC: rejected - gapped +3.3% above thesis price and 12.7% above 20-day average.
+- FOXA: rejected - gapped +4.4% above thesis price.
+- VRSK, ZBH, GLBE, CHD: rejected - buying would drop cash below the 10% buffer (cash $147.19; only ~$49 spendable).
+- DHI (low conviction): rejected - cash buffer.
+- Top-ups PEB, EXLS, GFL, RAL: already at/above target. WEC, REYN, CNC: top-up below minimum size.
+
+## Orders
+- None.
