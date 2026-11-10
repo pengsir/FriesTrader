@@ -1,23 +1,28 @@
-# 2026-11-09
+# 2026-11-10
 
-**Mode:** live (gate open, 4 dry-run days validated). No orders reviewed or placed this cycle.
+**模式:** live(闸门开启,已验证4个dry-run日)。本周期下单2笔,均已成交。
 
-## Loss-limit check
-- Daily P&L 0.00%, weekly -2.12% (limits 5% / 10%) -> entries not halted. Net deposits $999.99 (total value $976.76, equity $829.57, cost basis $831.64, all-time realized -$21.16).
+## 亏损限额检查
+- 当日盈亏 -1.22%,本周 -3.34%(限额 5% / 10%)-> 未暂停新开仓。净入金 $999.99(总值 $968.95,股票市值 $713.39,持仓成本 $711.07,历史已实现 -$33.36)。
 
-## Held positions (stop-loss / take-profit / conviction trim)
-- RAL: -1.4% vs cost, stop 11.08% -> holding. Overweight vs low-conviction target (1 of 3 cycles needed for trim).
-- WEC: -3.5%, stop 5.00% -> holding.
-- CNC: -3.4%, stop 9.37% -> holding.
-- PEB +0.6%, EXLS +2.8%, GFL +0.9%, REYN +0.4%: in gain, no stop computed, no take-profit tier reached.
+## 持仓止损 / 止盈 / 信念减仓
+- **GFL:止损触发。** 今日跳水至 $40.98,较成本 $45.67 下跌 10.27%,超过止损线 5.00%,已全部卖出 2.640026 股,成交均价 $41.05,已实现亏损 $12.20。
+- RAL:-0.7%,止损线 11.25% -> 持有。
+- WEC:-1.8%,止损线 5.00% -> 持有。
+- CNC:-5.3%,止损线 9.35% -> 持有。
+- PEB、EXLS、REYN:浮盈,未触发止盈档位,持有。
+- 信念减仓:无持仓超配达到触发条件。
 
-## New entries / top-ups considered
-- HRB: rejected - earnings today after close (blackout).
-- PFGC: rejected - gapped +3.3% above thesis price and 12.7% above 20-day average.
-- FOXA: rejected - gapped +4.4% above thesis price.
-- VRSK, ZBH, GLBE, CHD: rejected - buying would drop cash below the 10% buffer (cash $147.19; only ~$49 spendable).
-- DHI (low conviction): rejected - cash buffer.
-- Top-ups PEB, EXLS, GFL, RAL: already at/above target. WEC, REYN, CNC: top-up below minimum size.
+## 新开仓 / 加仓候选
+- NAVN(中等信念):批准,买入 $116.27,成交 4.542684 股,均价 $25.595。
+- RPRX(高信念)、G、YUM、TEVA、EVRG:拒绝 - 买入后现金将低于10%缓冲。
+- ALC:拒绝 - 今日盘后财报(blackout)。
+- GFL 加仓:拒绝 - 同周期已触发止损。
+- 加仓 PEB、EXLS、RAL、WEC、REYN:已达到/超过目标规模;CNC:加仓金额低于最小门槛。
 
-## Orders
-- None.
+## 实际下单
+- 卖出 GFL 全部(止损)约 $108.37。
+- 买入 NAVN $116.27。
+
+## FriesTrader 观察列表
+- 新增:NAVN。
