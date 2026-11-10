@@ -71,7 +71,7 @@ def main():
             halted_result = {
                 "symbol": symbol, "group": group, "conviction": conviction,
                 "passed": False,
-                "reason": "loss limit halt — daily/weekly drawdown breached",
+                "reason": "亏损限额熔断 — 当日/当周回撤已触及上限",
             }
             if group == "held":
                 halted_result["position_action"] = "top_up"
@@ -85,17 +85,17 @@ def main():
 
             reasons = []
             if conviction_pct > args.max_position_pct:
-                reasons.append(f"position size {conviction_pct:.4%} exceeds max_position_pct_of_account {args.max_position_pct:.4%}")
+                reasons.append(f"仓位 {conviction_pct:.4%} 超过 max_position_pct_of_account ({args.max_position_pct:.4%})")
             if candidate_concurrent_after > args.max_concurrent_positions:
                 reasons.append(
-                    f"concurrent_positions_after ({candidate_concurrent_after}) exceeds "
-                    f"max_concurrent_positions ({args.max_concurrent_positions}) — cap filled by "
-                    f"higher-priority candidates this cycle"
+                    f"买入后持仓数 ({candidate_concurrent_after}) 超过 "
+                    f"max_concurrent_positions ({args.max_concurrent_positions}) — 本周期名额已被 "
+                    f"更高优先级的候选占满"
                 )
             if candidate_cash_after < min_cash_buffer:
                 reasons.append(
-                    f"cash_remaining after trade (${candidate_cash_after:.2f}) would fall below "
-                    f"min_cash_buffer_pct (${min_cash_buffer:.2f}) of total_value"
+                    f"交易后剩余现金 (${candidate_cash_after:.2f}) 将低于 "
+                    f"总值的 min_cash_buffer_pct (${min_cash_buffer:.2f})"
                 )
 
             if reasons:
@@ -126,7 +126,7 @@ def main():
                 results.append({
                     "symbol": symbol, "group": group, "conviction": conviction,
                     "passed": False, "position_action": "top_up",
-                    "reason": "already at or above target size for its conviction tier — no top-up",
+                    "reason": "已达到或超过其信念档位的目标仓位 — 不加仓",
                     "current_position_value": round(current_position_value, 2),
                     "target_size": round(target_size, 2),
                     "headroom": round(headroom, 2),
@@ -143,11 +143,11 @@ def main():
                     "symbol": symbol, "group": group, "conviction": conviction,
                     "passed": False, "position_action": "top_up",
                     "reason": (
-                        f"top-up amount ${top_up_amount:.2f} is below the min top-up threshold "
-                        f"${min_top_up_threshold:.2f} (broker $1.00 minimum vs. min_top_up_usd "
-                        f"${args.min_top_up_usd:.2f} vs. min_top_up_pct_of_target "
-                        f"{args.min_top_up_pct_of_target:.0%} of target ${target_size:.2f}, "
-                        f"whichever is highest) — no order attempted"
+                        f"加仓金额 ${top_up_amount:.2f} 低于最小加仓门槛 "
+                        f"${min_top_up_threshold:.2f} (券商最低 $1.00、min_top_up_usd "
+                        f"${args.min_top_up_usd:.2f}、min_top_up_pct_of_target "
+                        f"{args.min_top_up_pct_of_target:.0%} × 目标仓位 ${target_size:.2f}, "
+                        f"三者取最高) — 未下单"
                     ),
                     "current_position_value": round(current_position_value, 2),
                     "target_size": round(target_size, 2),
@@ -161,8 +161,8 @@ def main():
                     "symbol": symbol, "group": group, "conviction": conviction,
                     "passed": False, "position_action": "top_up",
                     "reason": (
-                        f"cash_remaining after trade (${candidate_cash_after:.2f}) would fall below "
-                        f"min_cash_buffer_pct (${min_cash_buffer:.2f}) of total_value"
+                        f"交易后剩余现金 (${candidate_cash_after:.2f}) 将低于 "
+                        f"总值的 min_cash_buffer_pct (${min_cash_buffer:.2f})"
                     ),
                     "current_position_value": round(current_position_value, 2),
                     "target_size": round(target_size, 2),

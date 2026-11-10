@@ -96,13 +96,13 @@ def main():
     elif drawdown_pct <= 0:
         # volatility_scaled: skip the stdev computation on a gain, it could never trigger anyway
         result["stop_pct_used"] = None
-        result["notes"] = "gain, stop not computed"
+        result["notes"] = "盈利中,未计算止损"
     else:  # volatility_scaled, drawdown positive
         if len(args.daily_closes) < args.min_bars:
             stop_pct = args.fallback_stop_pct
             result["stop_pct_used"] = round(stop_pct, 6)
             result["fallback_reason"] = (
-                f"only {len(args.daily_closes)} usable bars available, below the {args.min_bars} minimum"
+                f"可用日线仅 {len(args.daily_closes)} 根,低于最少 {args.min_bars} 根"
             )
         else:
             closes = args.daily_closes

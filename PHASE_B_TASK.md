@@ -16,7 +16,10 @@ Do not add, remove, or loosen any gate condition on your own judgment.
 
 ## Language of human-readable text
 
-Write all human-readable free text in Chinese (简体中文): the `reason`,
+Write all human-readable free text in Chinese (简体中文) — the `reason`
+templates below are already in Chinese, and the scripts' own `reason` /
+`notes` / `halt_reason` strings are too; if any English slips through
+(e.g. a new script message), translate it before logging: the `reason`,
 `notes`, `halt_reason` and `fallback_reason` fields in `trade_log.jsonl`,
 and the whole of `trade_log_recent.md`. This overrides any "as-is" /
 verbatim instruction below: where a script returns an English
@@ -79,10 +82,10 @@ that took the position from zero). If it was within the last
 `exit_existing` candidate must carry a `new_fact_date` strictly later
 than that opening buy's `proposal_date`. If it's missing or not later,
 don't sell — log `"stage": "risk_check", "passed": false,
-"proposal_date": "<candidate's date>", "reason": "early exit guard --
-exit_existing within <N> trading days of the <opening-buy date> entry
-without a fact newer than the entry thesis (<new_fact_date or
-'none'>) -- sell skipped"` and treat it as held for the rest of the
+"proposal_date": "<candidate's date>", "reason": "提前退出保护 --
+exit_existing 发生在 <opening-buy date> 建仓后 <N> 个交易日内,
+且没有比建仓 thesis 更新的事实 (<new_fact_date 或
+'无'>) -- 跳过卖出"` and treat it as held for the rest of the
 cycle (its stop-loss/take-profit/conviction-trim checks still run).
 This never applies to stop_loss, take_profit, or conviction_trim
 sells.
@@ -144,8 +147,8 @@ position as if a loss-limit breach applied this cycle (`entries_halted
 = true` for new entries/top-ups, this position itself excluded from
 any sell decision) and log `"stage": "stop_loss"` with
 `"stop_pct_used": null, "triggered": false, "action":
-"halt_entries_check_manually", "notes": "stop_loss.py failed to run —
-verify this position's stop manually before next cycle"`. Do not fall
+"halt_entries_check_manually", "notes": "stop_loss.py 运行失败 —
+请在下个周期前手动核对该持仓的止损"`. Do not fall
 back to manual computation.
 
 If `triggered` is true — immediate full-position sell, no thesis
@@ -155,7 +158,7 @@ sell-execution pass. A good thesis never cancels a stop-loss — see
 - the script's `stop_pct_used`, `stop_reference_basis`,
   `stop_reference_price`
 - `trailing_high_since`, when trailing
-- the script's own `"notes": "gain, stop not computed"` as-is, when
+- the script's own `"notes": "盈利中,未计算止损"` as-is, when
   `stop_pct_used` is null
 - `stdev_20d`/`fallback_reason`, when present
 
@@ -181,8 +184,8 @@ past more than one not-yet-fired tier at once**.
 failure: `entries_halted = true` for new entries/top-ups this cycle,
 exclude this position from any sell decision, and log `"stage":
 "take_profit"` with `"triggered": false, "action":
-"halt_entries_check_manually", "notes": "take_profit.py failed to run
-— verify this position's tiers manually before next cycle"`. Do not
+"halt_entries_check_manually", "notes": "take_profit.py 运行失败
+— 请在下个周期前手动核对该持仓的止盈档位"`. Do not
 fall back to manual computation.
 
 **If `fired_this_cycle` is non-empty** — each fired tier is executed
@@ -350,7 +353,7 @@ fixed for the rest of this cycle unless one gets approved below.
 **If `open_slots <= 0`**: no **new** candidate can be approved this
 cycle. Skip the weekend-gap search and buy gate below for every
 **new**-group candidate — log instead:
-`"stage": "risk_check", "passed": false, "proposal_date": "<candidate's date from pending_proposals.jsonl>", "reason": "no open slots this cycle (X of Y max already held/approved) — skipped without staleness re-check"`.
+`"stage": "risk_check", "passed": false, "proposal_date": "<candidate's date from pending_proposals.jsonl>", "reason": "本周期无空余名额 (最多 Y 个,已持有/已批准 X 个) — 跳过,未做行情时效复核"`.
 **held** group is unaffected.
 
 **If `open_slots > 0`**: **new** group continues normally (slots may
@@ -361,7 +364,7 @@ take-profit tier fired, or a conviction-trim fired earlier this cycle
 (Step 5), it is not eligible for a top-up this same cycle, regardless
 of thesis or conviction — drop it from the **held** group before
 continuing, logging
-`"stage": "risk_check", "passed": false, "position_action": "top_up", "reason": "stop-loss/take-profit fired this cycle — not eligible for a same-cycle top-up"`.
+`"stage": "risk_check", "passed": false, "position_action": "top_up", "reason": "同一周期内触发止损/止盈,不符合同周期加仓条件"`.
 This applies unconditionally (dry_run or live) since it's about not
 producing a self-contradictory sell-and-buy decision within one cycle,
 not about whether the sell actually executed. It's a normal top-up
@@ -386,7 +389,7 @@ hours. **If today is Monday**:
    whatever you used).
 2. If anything materially contradicts the thesis/invalidation criteria,
    drop it — log
-   `"stage": "risk_check", "passed": false, "proposal_date": "<candidate's date from pending_proposals.jsonl>", "reason": "weekend news invalidated thesis: <what you found>", "sources": ["Outlet Name: https://..."]`
+   `"stage": "risk_check", "passed": false, "proposal_date": "<candidate's date from pending_proposals.jsonl>", "reason": "周末新闻使 thesis 失效: <发现的内容>", "sources": ["Outlet Name: https://..."]`
    — don't process further.
 3. If nothing turns up, proceed to the price-based check.
 
@@ -478,26 +481,25 @@ fresh on the next Phase A run (or, for the re-entry lock, once its own
 clearing condition is met). Log one `"stage": "risk_check", "passed":
 false, "proposal_date": "<candidate's date>"` line per entry in
 `blocking_conditions`, using the matching reason text:
-- `entry_price_gap`: `"reason": "price gapped <gap_pct>% above
-  thesis-time price ($<thesis-price> -> $<fresh-ask>), exceeds
-  entry_price_gap.max_pct (<threshold>) -- buy skipped this cycle"`
-- `entry_extension`: `"reason": "price <extension_pct>% above its
-  <N>-day average ($<moving_avg> -> $<fresh-ask>), exceeds
-  entry_extension.max_extension_pct (<threshold>) -- buy skipped this
-  cycle"`
-- `wash_sale_avoidance`: `"reason": "wash sale guard -- <symbol> was
-  sold at a loss within the <lookback_window_days>-day wash-sale
-  window (<matching_loss_sale_date>)"` (add `"position_action":
+- `entry_price_gap`: `"reason": "价格较 thesis 时价格跳空上涨 <gap_pct>%
+  ($<thesis-price> -> $<fresh-ask>),超过
+  entry_price_gap.max_pct (<threshold>) -- 本周期跳过买入"`
+- `entry_extension`: `"reason": "价格比 <N> 日均价高 <extension_pct>%
+  ($<moving_avg> -> $<fresh-ask>),超过
+  entry_extension.max_extension_pct (<threshold>) -- 本周期跳过买入"`
+- `wash_sale_avoidance`: `"reason": "洗售保护 -- <symbol> 在
+  <lookback_window_days> 天洗售窗口内曾亏损卖出
+  (<matching_loss_sale_date>)"` (add `"position_action":
   "top_up"` if it's a top-up candidate)
-- `sell_reentry_lock`: `"reason": "sell re-entry lock — current price
-  <fresh-ask> is above the <last-sell-price> it was sold at on
-  <last-sell-date> (reason: <last-sell-reason>)"` (for a gain-closed
-  sell still locked only on the time condition, append `", N of <max>
-  trading days elapsed"`)
-- `earnings_blackout`: `"reason": "earnings blackout -- next earnings
-  <report.date> (<timing>) is <trading_days_until_earnings> trading
-  days away, within earnings_blackout.blackout_trading_days
-  (<threshold>) -- buy skipped this cycle"` (add `"position_action":
+- `sell_reentry_lock`: `"reason": "卖出后再入场锁 — 当前价格
+  <fresh-ask> 高于 <last-sell-date> 的卖出价 <last-sell-price>
+  (卖出原因: <last-sell-reason>)"` (for a gain-closed
+  sell still locked only on the time condition, append `",已过 N / <max>
+  个交易日"`)
+- `earnings_blackout`: `"reason": "财报禁买期 -- 下次财报
+  <report.date> (<timing>) 距今 <trading_days_until_earnings> 个交易日,
+  在 earnings_blackout.blackout_trading_days
+  (<threshold>) 之内 -- 本周期跳过买入"` (add `"position_action":
   "top_up"` if it's a top-up candidate)
 
 **If `passed` is true but `entry_price_gap.gap_pct` is still
@@ -507,8 +509,8 @@ primary/major-outlet sources; cite whatever you used), citing whatever
 explains the gap in a `"sources"` field on the resulting log line; if
 it plausibly invalidates the thesis even under the hard ceiling, drop
 it — log `"stage": "risk_check", "passed": false, "proposal_date":
-"<candidate's date>", "reason": "weekend news invalidated thesis: <what
-you found>", "sources": ["Outlet Name: https://..."]`, same as the
+"<candidate's date>", "reason": "周末新闻使 thesis 失效: <发现的
+内容>", "sources": ["Outlet Name: https://..."]`, same as the
 weekend-gap check above.
 
 **Loss-limit halt check (always runs, gates all new entries and top-ups):**
@@ -588,14 +590,13 @@ any of it:
   `concurrent_positions_after_final`
 
 A **new**-group candidate rejected purely for lack of slots carries
-the script's own `"concurrent_positions_after (N) exceeds
-max_concurrent_positions (M) — cap filled by higher-priority
-candidates this cycle"` wording, to show it's scarcity, not quality.
+the script's own `"买入后持仓数 (N) 超过
+max_concurrent_positions (M) — 本周期名额已被更高优先级的候选占满"` wording, to show it's scarcity, not quality.
 
 **If either script fails to run**, do not guess a result: reject every
 still-pending candidate this cycle — log `"stage": "risk_check",
 "passed": false, "reason": "rank_candidates.py/position_sizing.py
-failed to run — no orders attempted this cycle, verify manually"` for
+运行失败 — 本周期未下任何订单,请手动核对"` for
 each — rather than falling back to manual computation.
 
 For each candidate, log `"stage": "risk_check"` with that candidate's

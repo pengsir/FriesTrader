@@ -42,9 +42,9 @@ def main():
 
     reasons = []
     if daily_breach:
-        reasons.append(f"daily drawdown {(-daily_pnl_pct):.4%} >= daily limit {args.daily_limit_pct:.4%}")
+        reasons.append(f"当日回撤 {(-daily_pnl_pct):.4%} >= 当日上限 {args.daily_limit_pct:.4%}")
     if weekly_breach:
-        reasons.append(f"weekly drawdown {(-weekly_pnl_pct):.4%} >= weekly limit {args.weekly_limit_pct:.4%}")
+        reasons.append(f"当周回撤 {(-weekly_pnl_pct):.4%} >= 当周上限 {args.weekly_limit_pct:.4%}")
 
     print(json.dumps({
         "daily_pnl_pct": round(daily_pnl_pct, 6),
