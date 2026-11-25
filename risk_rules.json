@@ -128,7 +128,7 @@
 
   "intraday_monitor": {
     "enabled": true,
-    "interval_minutes": 30,
+    "interval_minutes": 60,
     "note": "PHASE_C_TASK.md: script-only stop-loss / take-profit sweep run during market hours between the daily Phase B runs, so a stop is not only checked once at the open. Sells only (stop_loss and take_profit), same live-order gate as Phase B Step 6, no news search, no buys. Set enabled=false to stop it from acting. The scheduler itself lives outside this repo."
   },
 

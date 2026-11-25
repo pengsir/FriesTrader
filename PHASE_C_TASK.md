@@ -3,16 +3,17 @@
 _Part of [FriesTrader](https://github.com/YizhiSong/FriesTrader), Copyright (c) 2026 Yizhi Song, MIT License._
 
 A light, sells-only sweep that runs every `intraday_monitor.interval_minutes`
-(30) during regular market hours on weekdays, between Phase B's daily run
+(60 -- the cloud scheduler's minimum interval) during regular market hours on weekdays, between Phase B's daily run
 and the close. It exists because Phase B only evaluates stops once a day at
 the open: a backtest on this account's live entries showed intraday
 stop checking would have cut the month's losses by about $8 (~16%). It is **not**
 a second Phase B: no news search, no thesis, no buys, no top-ups, no
 watchlist sync.
 
-Suggested schedule (Pacific): 7:05am, 7:35am, … , 12:35pm weekdays (the
+Schedule (Pacific): hourly at :05 from 7:05am to 12:05pm weekdays (the
 first run is after Phase B's 6:35am run has finished; the last is before
-the 1:00pm close). The scheduler itself lives outside this repo — set it up
+the 1:00pm close). Like Phases A/B, the routine fires on a UTC cron that
+covers both daylight-saving offsets and gates itself on Los Angeles time. The scheduler itself lives outside this repo — set it up
 wherever Phase A/B are scheduled.
 
 Authorized to place real live orders under exactly the same gate as Phase B
@@ -54,7 +55,7 @@ If either script fails, skip that position this sweep and log one line
 Chinese `notes`. Do not hand-compute.
 
 **Log only what matters.** A position that triggers nothing writes no
-line (a 30-minute sweep would otherwise bloat `trade_log.jsonl` with
+line (an hourly sweep would otherwise bloat `trade_log.jsonl` with
 hundreds of identical hold lines). Triggers and failures are logged with
 the same fields as Phase B's lines plus `"source": "phase_c"`.
 

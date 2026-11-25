@@ -127,7 +127,7 @@ candidates are bought:
 - **Exits** (`stop_loss.py`, `take_profit.py`). Volatility-scaled stop, and
   take-profit at +6% / +12% / +20% (one third of the original position
   each, so the third tier closes it). Conviction trim is disabled.
-  `PHASE_C_TASK.md` adds a script-only stop/take-profit sweep every 30
+  `PHASE_C_TASK.md` adds a script-only stop/take-profit sweep every hour during market hours
   minutes during market hours.
 
 Every decision is logged to `trade_log.jsonl`. Some cycles buy nothing.
