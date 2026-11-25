@@ -343,6 +343,14 @@ Phase B (Step 7) as the secondary within-tier tie-break, after
 `risk_flags` — a disclosed "room in the setup" proxy, not a fair-value
 calc. Omit for `avoid`/`exit_existing`.
 
+**Include `sector`** on every `thesis` line (all directions, held
+positions included): the `sector` string from Step 1's
+`get_equity_fundamentals` call, copied verbatim (e.g. `"Technology
+Services"`) — always that field, never the scan's own Sector column, so
+held and new candidates share one vocabulary. Phase B (Step 7) uses it for
+`position_sizing.max_positions_per_sector`; omit the key if the call
+returned none.
+
 **Include a `sources` field** listing outlet name + URL for every search
 result that informed this thesis (e.g.
 `["Reuters: https://...", "Company Q2 press release: https://..."]`) —

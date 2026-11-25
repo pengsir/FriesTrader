@@ -52,6 +52,11 @@ def main():
     p.add_argument("--trailing-high-since", default=None,
                     help="entry date of the current holding period, passed through for logging")
 
+    p.add_argument("--compute-stop-pct-only", action="store_true",
+                    help="size a NEW entry: compute stop_pct_used even when there is no drawdown "
+                         "(pass the fresh ask as both --average-cost and --current-price). "
+                         "The triggered/action fields are meaningless in this mode.")
+
     args = p.parse_args()
 
     if args.mode == "fixed" and args.hard_stop_pct is None:
@@ -93,7 +98,7 @@ def main():
         # fixed mode always reports hard_stop_pct, regardless of drawdown sign
         stop_pct = args.hard_stop_pct
         result["stop_pct_used"] = round(stop_pct, 6)
-    elif drawdown_pct <= 0:
+    elif drawdown_pct <= 0 and not args.compute_stop_pct_only:
         # volatility_scaled: skip the stdev computation on a gain, it could never trigger anyway
         result["stop_pct_used"] = None
         result["notes"] = "盈利中,未计算止损"

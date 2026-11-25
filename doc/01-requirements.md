@@ -105,8 +105,8 @@ FriesTrader 的目标是构建一个面向 Robinhood Agentic Trading MCP 的自�
 每个开放持仓必须检查：
 
 - 固定或波动率缩放止损；
-- 15%、30%、50% 分级止盈；
-- 持仓 conviction 持续降低且超配时的 conviction trim；
+- 6%、12%、20% 分级止盈（每档卖出原始仓位的 1/3，第三档清仓；`sell_fraction` 为占剩余仓位的比例，依次 0.3333、0.5、1.0）；
+- 持仓 conviction 持续降低且超配时的 conviction trim（默认关闭，`conviction_trim.enabled=false`）；
 - Phase A 产生的 `exit_existing`；
 - 早期退出保护规则。
 
@@ -121,7 +121,9 @@ FriesTrader 的目标是构建一个面向 Robinhood Agentic Trading MCP 的自�
 - wash-sale guard；
 - sell re-entry lock；
 - earnings blackout；
-- 每日/每周损失限制；
+- 每日/每周损失限制（当前 2% / 4%）与止损集群熔断（5 个交易日内 ≥3 次止损暂停新开仓 3 个交易日，其后仓位减半）；
+- 按风险定仓（每笔满额止损最多亏账户 0.8%）、每日 ≤2 只/每周 ≤4 只新开仓、同一行业 ≤2 只；
+- top-up 默认关闭（`position_sizing.top_ups_enabled=false`）；
 - 并发持仓数和现金缓冲检查；
 - conviction 仓位上限检查。
 

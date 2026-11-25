@@ -16,6 +16,15 @@ Candidate JSON is read from stdin, an array of objects:
   {"symbol": "AMZN", "group": "held", "conviction": "high", "current_position_value": 100.39}
 `group` is "new" or "held". `current_position_value` is required for
 "held" candidates only.
+
+Optional per-candidate fields for "new" candidates:
+  "stop_pct": 0.062   -- the volatility-scaled stop this entry would carry
+                         (scripts/stop_loss.py --compute-stop-pct-only);
+                         with --risk-per-trade-pct it caps the dollar size so a
+                         full stop-out loses at most that share of total_value
+  "sector": "Health Care" -- for --max-per-sector (a missing sector skips that check)
+
+Every optional flag below defaults to "off", so older invocations still work.
 """
 import argparse
 import json
@@ -47,6 +56,21 @@ def main():
     p.add_argument("--min-top-up-pct-of-target", type=float, required=True)
     p.add_argument("--conviction-pct", type=parse_pct_map, required=True,
                     help='fixed conviction-tier sizing table, e.g. "high:0.20,medium:0.12,low:0.06"')
+    p.add_argument("--top-ups-disabled", action="store_true",
+                    help="risk_rules.json position_sizing.top_ups_enabled == false: reject every held candidate")
+    p.add_argument("--risk-per-trade-pct", type=float, default=None,
+                    help="position_sizing.risk_per_trade_pct_of_account; needs per-candidate stop_pct")
+    p.add_argument("--size-multiplier", type=float, default=1.0,
+                    help="stop_cluster.py size_multiplier, applied to new-entry dollar sizes")
+    p.add_argument("--max-new-per-day", type=int, default=None)
+    p.add_argument("--new-today", type=int, default=0,
+                    help="new entries already bought / would-be-bought earlier today")
+    p.add_argument("--max-new-per-week", type=int, default=None)
+    p.add_argument("--new-this-week", type=int, default=0,
+                    help="new entries already bought / would-be-bought this Mon-Fri week (incl. today)")
+    p.add_argument("--max-per-sector", type=int, default=None)
+    p.add_argument("--held-sectors", default="",
+                    help="'|'-separated sector of every currently open position (unknown ones omitted)")
     args = p.parse_args()
 
     try:
@@ -60,6 +84,11 @@ def main():
     min_cash_buffer = args.min_cash_buffer_pct * args.total_value
 
     results = []
+    new_today = args.new_today
+    new_this_week = args.new_this_week
+    sector_counts = {}
+    for sec in (x for x in args.held_sectors.split("|") if x):
+        sector_counts[sec] = sector_counts.get(sec, 0) + 1
 
     for c in candidates:
         symbol = c["symbol"]
@@ -80,6 +109,16 @@ def main():
 
         if group == "new":
             dollar_amount = round(conviction_pct * args.total_value, 2)
+            sized_by = "conviction"
+            stop_pct = c.get("stop_pct")
+            if args.risk_per_trade_pct is not None and stop_pct:
+                risk_cap = round(args.risk_per_trade_pct * args.total_value / stop_pct, 2)
+                if risk_cap < dollar_amount:
+                    dollar_amount = risk_cap
+                    sized_by = "risk"
+            if args.size_multiplier != 1.0:
+                dollar_amount = round(dollar_amount * args.size_multiplier, 2)
+            sector = c.get("sector")
             candidate_concurrent_after = concurrent_positions_after + 1
             candidate_cash_after = cash_remaining - dollar_amount
 
@@ -97,27 +136,61 @@ def main():
                     f"交易后剩余现金 (${candidate_cash_after:.2f}) 将低于 "
                     f"总值的 min_cash_buffer_pct (${min_cash_buffer:.2f})"
                 )
+            if dollar_amount < 1.00:
+                reasons.append(f"买入金额 ${dollar_amount:.2f} 低于券商最低 $1.00")
+            if args.max_new_per_day is not None and new_today >= args.max_new_per_day:
+                reasons.append(
+                    f"今日新开仓已达 max_new_positions_per_day ({args.max_new_per_day})"
+                )
+            if args.max_new_per_week is not None and new_this_week >= args.max_new_per_week:
+                reasons.append(
+                    f"本周新开仓已达 max_new_positions_per_week ({args.max_new_per_week})"
+                )
+            if args.max_per_sector is not None and sector and sector_counts.get(sector, 0) >= args.max_per_sector:
+                reasons.append(
+                    f"行业 {sector} 已持有 {sector_counts[sector]} 只,达到 "
+                    f"max_positions_per_sector ({args.max_per_sector})"
+                )
 
             if reasons:
                 results.append({
                     "symbol": symbol, "group": group, "conviction": conviction,
                     "passed": False, "reason": "; ".join(reasons),
-                    "dollar_amount": dollar_amount,
+                    "dollar_amount": dollar_amount, "sized_by": sized_by,
                 })
                 continue
 
             cash_remaining = candidate_cash_after
             concurrent_positions_after = candidate_concurrent_after
-            results.append({
+            new_today += 1
+            new_this_week += 1
+            if sector:
+                sector_counts[sector] = sector_counts.get(sector, 0) + 1
+            entry = {
                 "symbol": symbol, "group": group, "conviction": conviction,
                 "passed": True,
                 "dollar_amount": dollar_amount,
+                "sized_by": sized_by,
                 "concurrent_positions_after": concurrent_positions_after,
                 "cash_remaining_after": round(cash_remaining, 2),
                 "cash_buffer_after_pct": round(cash_remaining / args.total_value, 6),
-            })
+            }
+            if stop_pct:
+                entry["stop_pct"] = stop_pct
+            if sector:
+                entry["sector"] = sector
+            elif args.max_per_sector is not None:
+                entry["sector_check"] = "skipped_no_sector"
+            results.append(entry)
 
         elif group == "held":
+            if args.top_ups_disabled:
+                results.append({
+                    "symbol": symbol, "group": group, "conviction": conviction,
+                    "passed": False, "position_action": "top_up",
+                    "reason": "加仓已停用 (position_sizing.top_ups_enabled=false)",
+                })
+                continue
             current_position_value = c["current_position_value"]
             target_size = conviction_pct * args.total_value
             headroom = target_size - current_position_value

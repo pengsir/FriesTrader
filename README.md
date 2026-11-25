@@ -111,12 +111,24 @@ candidates are bought:
   more than `entry_extension.max_extension_pct` above its 20-day average,
   under a wash-sale or sell-re-entry lock, or within
   `earnings_blackout.blackout_trading_days` of its next earnings report.
+- **Circuit breakers** (`pnl_pct.py`, `stop_cluster.py`). New entries halt
+  when the day's/week's realized loss reaches `loss_limits.daily_loss_limit_pct_of_account`
+  / `weekly_loss_limit_pct_of_account` (currently 2% / 4%), or when
+  `loss_limits.stop_cluster` sees 3+ stop-outs in 5 trading days (pause
+  3 trading days, then half-size until the cluster ages out).
 - **Rank** (`rank_candidates.py`). By conviction, then fewer `risk_flags`,
   then larger percent below the 52-week high.
 - **Size** (`position_sizing.py`). In ranked order, each candidate is
-  bought at its conviction-tier size (a fixed percent of the account)
-  until `max_concurrent_positions` or the `min_cash_buffer_pct` floor is
-  reached.
+  bought at its conviction-tier size (a fixed percent of the account),
+  capped so a full stop-out loses at most
+  `risk_per_trade_pct_of_account`, until `max_concurrent_positions`, the
+  `min_cash_buffer_pct` floor, the per-day/per-week new-entry caps or the
+  per-sector cap is reached. Top-ups are off (`top_ups_enabled`).
+- **Exits** (`stop_loss.py`, `take_profit.py`). Volatility-scaled stop, and
+  take-profit at +6% / +12% / +20% (one third of the original position
+  each, so the third tier closes it). Conviction trim is disabled.
+  `PHASE_C_TASK.md` adds a script-only stop/take-profit sweep every 30
+  minutes during market hours.
 
 Every decision is logged to `trade_log.jsonl`. Some cycles buy nothing.
 
@@ -159,11 +171,17 @@ scheduled time.)
     not-yet-fired tier at once.
   - `conviction_trim.py` — mechanically trims a held position back to
     its conviction-tier target after several consecutive
-    below-high-conviction, overweight cycles.
+    below-high-conviction, overweight cycles (disabled by default:
+    `conviction_trim.enabled` is `false`).
+  - `stop_cluster.py` — the clustered-stop-out circuit breaker: halts
+    new entries, then halves their size, after `max_stops` stop-outs
+    inside `window_trading_days`.
   - `rank_candidates.py` — the ranking above (conviction, `risk_flags`,
     `pct_below_52wk_high`); new entries and top-ups compete on one list.
   - `position_sizing.py` — the sizing above, plus concurrency and
-    cash-buffer checks, compounding running totals down the ranked list.
+    cash-buffer checks, risk-based size caps, per-day/week/sector entry
+    caps and the top-up switch, compounding running totals down the
+    ranked list.
 
   Each takes plain CLI args, prints one JSON object, and is meant to be
   read from directly rather than re-derived — see `PHASE_B_TASK.md`
@@ -171,8 +189,13 @@ scheduled time.)
   (`stop_loss.py`/`take_profit.py`/`conviction_trim.py` in Step 5;
   `entry_gate.py`/`pnl_pct.py`/`rank_candidates.py`/`position_sizing.py`
   in Step 7).
-- `PHASE_A_TASK.md` / `PHASE_B_TASK.md` — the full, self-contained spec
-  each phase follows.
+- `PHASE_A_TASK.md` / `PHASE_B_TASK.md` / `PHASE_C_TASK.md` — the full,
+  self-contained spec each phase follows (Phase C is the optional
+  intraday stop/take-profit sweep).
+- `scripts/backtest_exits.py` / `scripts/backtest_entries.py` — offline
+  backtests of exit and entry rules on daily bars in `backtest/`; they
+  informed the current stop/take-profit/extension settings and are
+  explicit about their small-sample limits.
 - `trade_log_template.jsonl` — the log line shapes; real logs accumulate
   in `trade_log.jsonl` in this same style.
 
@@ -183,7 +206,7 @@ regenerated every run, symbols genericized):
 
 > **2026-07-09**
 >
-> **Loss limit**: OK — daily 0.0%, weekly -2.1%, within -5%/-10% limits.
+> **Loss limit**: OK — daily 0.0%, weekly -2.1%, within -2%/-4% limits.
 >
 > **Held positions** (stop-loss / take-profit):
 > - EXAMPLE — stop 7.00% (vol-scaled), drawdown -2.3% — holding

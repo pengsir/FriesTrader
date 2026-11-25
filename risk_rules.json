@@ -14,10 +14,10 @@
     "watchlist_max_candidates": 25,
     "supplementary_scan_id": "5b3196c3-cbad-4089-ae3c-51f500fc00ce",
     "supplementary_scan_max_candidates": 15,
-    "supplementary_scan_note": "Robinhood scan 'Short-term Momentum Breakout' -- $2B-$50B cap, price >= 5, 30d avg volume >= 1M, positive operating margin, RSI(14) 48-73, price above 200d MA and 1.0-1.10x its 20d MA (matches entry_extension), price >= 85% of 52w high, 5d change +1.5% to +18%, 5d/30d avg volume >= 1.15. Deliberately avoids same-day change/relative-volume hard filters because Phase A runs after the close, when day change reads 0. Sorted by same-day relative volume desc. Prior scan 'Cyclical Deep Value' (320b00d0-848f-4029-a358-98c6c641a01c) is kept in Robinhood if you want to switch back. Additive to watchlist_max_candidates, not shared with it -- the watchlist's own slots are never crowded out by scan results.",
+    "supplementary_scan_note": "Robinhood scan 'Short-term Momentum Breakout' -- $5B-$50B cap (matches universe.min_market_cap_usd/max_market_cap_usd's lower bound), price >= 5, 30d avg volume >= 1M, positive operating margin, RSI(14) 48-73, price above 200d MA and 1.0-1.05x its 20d MA (matches entry_extension), price >= 85% of 52w high, 5d change +1.5% to +18%, 5d/30d avg volume >= 1.15. Deliberately avoids same-day change/relative-volume hard filters because Phase A runs after the close, when day change reads 0. Sorted by same-day relative volume desc. Prior scan 'Cyclical Deep Value' (320b00d0-848f-4029-a358-98c6c641a01c) is kept in Robinhood if you want to switch back. Additive to watchlist_max_candidates, not shared with it -- the watchlist's own slots are never crowded out by scan results.",
 
     "min_avg_daily_volume": 1000000,
-    "min_market_cap_usd": 20000000000,
+    "min_market_cap_usd": 5000000000,
     "max_market_cap_usd": 5000000000000,
 
     "penny_stock_filter_enabled": true,
@@ -48,7 +48,12 @@
     "min_cash_buffer_pct": 0.10,
     "min_top_up_usd": 5.00,
     "min_top_up_pct_of_target": 0.10,
-    "min_top_up_note": "A top-up only fires if the computed buy amount clears max($1.00 broker minimum, min_top_up_usd, min_top_up_pct_of_target x target_size for that candidate's conviction tier). Below that, skip without calling review_equity_order -- a top-up smaller than this doesn't move the position meaningfully, and letting headroom shrink toward zero every cycle otherwise generates a long tail of dust-sized orders as the position converges on target. Applies to top-ups only, never to new-entry sizing."
+    "top_ups_enabled": false,
+    "risk_per_trade_pct_of_account": 0.008,
+    "max_new_positions_per_day": 2,
+    "max_new_positions_per_week": 4,
+    "max_positions_per_sector": 2,
+    "min_top_up_note": "A top-up only fires if the computed buy amount clears max($1.00 broker minimum, min_top_up_usd, min_top_up_pct_of_target x target_size for that candidate's conviction tier). Below that, skip without calling review_equity_order -- a top-up smaller than this doesn't move the position meaningfully, and letting headroom shrink toward zero every cycle otherwise generates a long tail of dust-sized orders as the position converges on target. Applies to top-ups only, never to new-entry sizing. top_ups_enabled=false (current) turns top-ups off entirely: held candidates are not sent to position_sizing.py and produce no risk_check lines (backtest showed top-ups add churn, not return). risk_per_trade_pct_of_account caps a NEW entry so that a full stop-out loses at most this share of total_value: dollar_amount = min(conviction tier target, risk_per_trade_pct_of_account x total_value / stop_pct), where stop_pct is the same volatility-scaled stop the position would carry (scripts/stop_loss.py --compute-stop-pct-only). max_new_positions_per_day / _per_week stagger entries (counts are of buys placed/would-be-placed this calendar day / this Mon-Fri week); max_positions_per_sector caps same-sector concentration (sector comes from Phase A thesis entries; a candidate without a sector skips this check and is logged as such)."
   },
 
   "stop_loss": {
@@ -64,18 +69,18 @@
 
   "take_profit": {
     "tiers": [
-      {"gain_pct": 0.15, "sell_fraction_of_position": 0.25},
-      {"gain_pct": 0.30, "sell_fraction_of_position": 0.25},
-      {"gain_pct": 0.50, "sell_fraction_of_position": 0.25}
+      {"gain_pct": 0.06, "sell_fraction_of_position": 0.3333},
+      {"gain_pct": 0.12, "sell_fraction_of_position": 0.5},
+      {"gain_pct": 0.20, "sell_fraction_of_position": 1.0}
     ],
-    "note": "Tiered partial take-profit, not a single full-exit threshold. Every open position must have this checked on every cycle, independent of any new thesis about the stock — this account is short-term oriented, not buy-and-hold. A good new narrative does not cancel a take-profit tier any more than it cancels a stop-loss. Each tier fires once (per holding period, i.e. since the position last closed to zero) when gain first reaches it, selling sell_fraction_of_position of the position's quantity at that moment — see PHASE_B_TASK.md Step 5 for the exact mechanics. After all three tiers have fired, the remaining quantity is held long indefinitely; only the stop-loss still applies to it. See sell_reentry_lock for re-entry lock behavior."
+    "note": "Tiered take-profit that fully exits the position. sell_fraction_of_position is a share of the quantity REMAINING when the tier fires (not of the original quantity), so 0.3333 -> 0.5 -> 1.0 sells one third of the original position at each tier and leaves nothing after the third. Tiers were lowered from 15/30/50% because holding periods run 1-2 weeks and no position ever reached +15% (max seen +7%); a backtest on the live entries gave the lower tiers a small edge. Every open position must have this checked on every cycle, independent of any new thesis about the stock -- this account is short-term oriented, not buy-and-hold. A good new narrative does not cancel a take-profit tier any more than it cancels a stop-loss. Each tier fires once (per holding period, i.e. since the position last closed to zero) when gain first reaches it -- see PHASE_B_TASK.md Step 5 for the exact mechanics. After the first tier fires the stop reference switches to the trailing high (see stop_loss.py). See sell_reentry_lock for re-entry lock behavior."
   },
 
   "conviction_trim": {
-    "enabled": true,
+    "enabled": false,
     "overweight_trigger_pct": 0.25,
     "min_overweight_conviction_cycles": 3,
-    "note": "Trims a held position to its conviction-tier target once conviction has been 'low' or 'medium' (i.e. not 'high') for min_overweight_conviction_cycles consecutive cycles and the overage exceeds overweight_trigger_pct -- see scripts/conviction_trim.py. See sell_reentry_lock for re-entry lock behavior."
+    "note": "DISABLED (enabled=false): the trims were tiny, near break-even and fed the wash-sale/re-entry locks without measurable benefit. Trims a held position to its conviction-tier target once conviction has been 'low' or 'medium' (i.e. not 'high') for min_overweight_conviction_cycles consecutive cycles and the overage exceeds overweight_trigger_pct -- see scripts/conviction_trim.py. See sell_reentry_lock for re-entry lock behavior."
   },
 
   "sell_reentry_lock": {
@@ -84,8 +89,16 @@
   },
 
   "loss_limits": {
-    "daily_loss_limit_pct_of_account": 0.05,
-    "weekly_loss_limit_pct_of_account": 0.10
+    "daily_loss_limit_pct_of_account": 0.02,
+    "weekly_loss_limit_pct_of_account": 0.04,
+    "stop_cluster": {
+      "enabled": true,
+      "window_trading_days": 5,
+      "max_stops": 3,
+      "pause_trading_days": 3,
+      "size_multiplier": 0.5
+    },
+    "stop_cluster_note": "Circuit breaker for clustered stop-outs. If max_stops or more stop_loss triggers (distinct symbol+date) fall within the last window_trading_days trading days (today = day 0), new entries are halted until pause_trading_days trading days have passed since the most recent stop, then new-entry dollar sizes are multiplied by size_multiplier until the cluster ages out of the window. Computed by scripts/stop_cluster.py; never blocks sells."
   },
 
   "wash_sale_avoidance": {
@@ -103,14 +116,20 @@
   "entry_extension": {
     "enabled": true,
     "lookback_trading_days": 20,
-    "max_extension_pct": 0.10,
-    "note": "Hard ceiling on buys -- skips the buy this cycle if current_price is more than max_extension_pct above its own lookback_trading_days-day moving average, same principle as entry_price_gap. Never applies to sells."
+    "max_extension_pct": 0.05,
+    "note": "Lowered from 0.10 to 0.05: in a backtest of the momentum scan, entries 5-10% above the 20d average averaged -1.2% per trade vs +0.4% for those within 5%. Hard ceiling on buys -- skips the buy this cycle if current_price is more than max_extension_pct above its own lookback_trading_days-day moving average, same principle as entry_price_gap. Never applies to sells."
   },
 
   "earnings_blackout": {
     "enabled": true,
     "blackout_trading_days": 5,
     "note": "Skips new entries and top-ups when the symbol's next earnings report is within blackout_trading_days trading days (0 = today), so fresh money isn't put on a binary event. Never applies to sells."
+  },
+
+  "intraday_monitor": {
+    "enabled": true,
+    "interval_minutes": 30,
+    "note": "PHASE_C_TASK.md: script-only stop-loss / take-profit sweep run during market hours between the daily Phase B runs, so a stop is not only checked once at the open. Sells only (stop_loss and take_profit), same live-order gate as Phase B Step 6, no news search, no buys. Set enabled=false to stop it from acting. The scheduler itself lives outside this repo."
   },
 
   "early_exit_guard": {

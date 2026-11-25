@@ -5,7 +5,10 @@ _Part of [FriesTrader](https://github.com/YizhiSong/FriesTrader), Copyright (c) 
 Automated second half of this pipeline (see `README.md`), run every
 weekday 6:35am Pacific (5 min after 6:30am PT market open) as a cloud routine.
 Performs **Steps 4–9** (plus the Step 8.5 watchlist sync), consuming
-candidates from Phase A's `pending_proposals.jsonl`.
+candidates from Phase A's `pending_proposals.jsonl`. A lighter,
+script-only stop-loss/take-profit sweep runs between these daily runs --
+see `PHASE_C_TASK.md`; its `stop_loss`/`take_profit`/`order` lines land in
+the same `trade_log.jsonl` and are read by this task like any other.
 
 Authorized to place real live orders under a narrow condition (see Step
 6's "Live-order gate" — Step 8 reuses the identical gate for buys).
@@ -173,7 +176,7 @@ position's quantity last reached zero (a full exit) — collect the
 `gain_pct` values already fired this holding period.
 
 Run:
-`python3 scripts/take_profit.py --average-cost <avg cost> --current-price <fresh quote> --quantity <quantity> --tiers <risk_rules.json take_profit.tiers as "gain_pct:sell_fraction" pairs, e.g. "0.15:0.25,0.30:0.25,0.50:0.25"> [--already-fired <comma-separated gain_pct values already fired this holding period>]`
+`python3 scripts/take_profit.py --average-cost <avg cost> --current-price <fresh quote> --quantity <quantity> --tiers <risk_rules.json take_profit.tiers as "gain_pct:sell_fraction" pairs, e.g. "0.06:0.3333,0.12:0.5,0.20:1.0"> [--already-fired <comma-separated gain_pct values already fired this holding period>]`
 and use its JSON output directly (`gain_pct`, `tiers_status`,
 `fired_this_cycle`, `triggered`, `action`) rather than recomputing any
 of it — the script already handles the ascending-order,
@@ -201,15 +204,21 @@ entry in it (already in ascending order), `"stage": "take_profit",
 `gain_pct` and `tiers_status`, `"triggered": false, "action":
 "hold_monitor"`.
 
-Once all three tiers have fired, the remaining quantity is held long
-indefinitely — only the stop-loss check above still applies to it.
-Tiers become eligible again only after the position is fully closed to
-zero shares and a new entry is later opened (a genuinely new holding
-period, not a top-up).
+`sell_fraction` is a share of the quantity *remaining* when the tier
+fires, so the three tiers sell one third of the original position each
+and the third (`sell_fraction` 1.0) closes it. When a tier's
+`quantity_sold` equals the whole remaining quantity, sell the position's
+full live quantity (no rounding that could strand a dust fraction).
+Between tiers, only the stop-loss check above still applies to the
+remainder (its reference switches to the trailing high once a tier has
+fired). Tiers become eligible again only after the position is fully
+closed to zero shares and a new entry is later opened (a genuinely new
+holding period, not a top-up).
 
 ### Conviction-trim check (held positions only, mechanical rebalance-down)
 
-Skip entirely if `risk_rules.json`'s `conviction_trim.enabled` is `false`.
+Skip entirely if `risk_rules.json`'s `conviction_trim.enabled` is `false`
+(it currently is — log nothing for this check in that case).
 Otherwise, for every **held** position, using this cycle's fresh
 `conviction` and `target_size` (from the same inputs gathered for Step
 7's priority-order ranking — pull those first if not yet available),
@@ -355,6 +364,13 @@ cycle. Skip the weekend-gap search and buy gate below for every
 **new**-group candidate — log instead:
 `"stage": "risk_check", "passed": false, "proposal_date": "<candidate's date from pending_proposals.jsonl>", "reason": "本周期无空余名额 (最多 Y 个,已持有/已批准 X 个) — 跳过,未做行情时效复核"`.
 **held** group is unaffected.
+
+**If `position_sizing.top_ups_enabled` is `false`** (current setting): top-ups
+are off. Drop the whole **held** group from Step 7 — send none of it to
+`position_sizing.py`, run no buy gate or weekend-gap search for it, and log
+no `risk_check` line for it. (Held positions are still handled by Step 5's
+exit checks and by Phase A's `exit_existing`.) Everything below that
+mentions top-ups only applies when `top_ups_enabled` is `true`.
 
 **If `open_slots > 0`**: **new** group continues normally (slots may
 still run out mid-ranking via ordinary per-candidate concurrency check).
@@ -538,6 +554,22 @@ Log as `"stage": "loss_limit_check"`, including `net_deposits_usd` and
 its components (`total_value`, `equity_value`, open-position cost
 basis, all-time realized P&L).
 
+**Stop-cluster check (only if `loss_limits.stop_cluster.enabled`; runs right
+after the loss-limit check, gates new entries only, never a sell):** collect
+every `"stage": "stop_loss", "triggered": true` entry in `trade_log.jsonl`
+(from this run, Phase B runs and Phase C sweeps) within the last
+`stop_cluster.window_trading_days` trading days, de-duplicated to one per
+symbol+date, plus any stop triggered earlier in this very cycle. Convert
+each to its age in trading days (0 = today, 1 = previous trading day).
+Run
+`python3 scripts/stop_cluster.py --stop-ages <comma-separated ages, or empty> --window-trading-days <loss_limits.stop_cluster.window_trading_days> --max-stops <loss_limits.stop_cluster.max_stops> --pause-trading-days <loss_limits.stop_cluster.pause_trading_days> --size-multiplier <loss_limits.stop_cluster.size_multiplier>`
+and use its JSON (`stops_in_window`, `cluster_active`, `entries_halted`,
+`size_multiplier`, `halt_reason`) directly. If `entries_halted` is true,
+treat it exactly like a loss-limit halt (pass `--entries-halted` below);
+otherwise pass its `size_multiplier` to the sizing script. If the script
+fails to run, fail safe: `entries_halted = true`. Add `stop_cluster` (the
+script's JSON) to the same `loss_limit_check` log line.
+
 **Candidate priority order — new entries and top-ups compete equally
 (decide before any per-candidate check):**
 Merge **new** and **held** groups from Step 4's classification
@@ -557,9 +589,30 @@ re-pulled `get_equity_positions` above × fresh price from
 from `get_portfolio` above (`cash` is the starting `cash_remaining`),
 and `concurrent_positions_start` (the `open_slots` computation above).
 
+**Extra inputs for new-entry sizing (new-group candidates only):**
+- `stop_pct` — the stop this entry would carry. Reuse the daily closes
+  already pulled for the buy gate and run `python3 scripts/stop_loss.py
+  --average-cost <fresh ask> --current-price <fresh ask> --mode
+  <stop_loss.mode> --hard-stop-pct <stop_loss.hard_stop_pct>
+  --volatility-multiplier <stop_loss.volatility_stdev_multiplier>
+  --min-stop-pct <stop_loss.min_stop_pct> --max-stop-pct
+  <stop_loss.max_stop_pct> --fallback-stop-pct <stop_loss.fallback_stop_pct>
+  --min-bars 10 --daily-closes <closes> --compute-stop-pct-only`; its
+  `stop_pct_used` goes into the candidate JSON as `stop_pct`. If it fails,
+  omit `stop_pct` (the candidate is then sized by conviction tier only;
+  say so in its log line).
+- `sector` — the `sector` field of that candidate's Phase A thesis entry
+  (omit if absent). For `--held-sectors`, join with `|` the `sector` of the
+  Phase A thesis entry for every symbol in the re-pulled
+  `get_equity_positions` (skip holdings with no sector).
+- `--new-today` / `--new-this-week`: count `"stage": "order"` buy entries in
+  `trade_log.jsonl` with `placed: true` (or `would_execute: true` in
+  dry-run) that opened a position (no `position_action: "top_up"`), one per
+  symbol+date, dated today / dated since this week's Monday.
+
 Rank the candidates, then size them — pipe the candidate list (a JSON
 array) through both scripts in sequence (directly chainable):
-`python3 scripts/rank_candidates.py | python3 scripts/position_sizing.py --total-value <total_value> --cash-start <cash> --concurrent-positions-start <concurrent_positions_start> [--entries-halted] --max-position-pct <position_sizing.max_position_pct_of_account> --max-concurrent-positions <position_sizing.max_concurrent_positions> --min-cash-buffer-pct <position_sizing.min_cash_buffer_pct> --min-top-up-usd <position_sizing.min_top_up_usd> --min-top-up-pct-of-target <position_sizing.min_top_up_pct_of_target> --conviction-pct "high:0.20,medium:0.12,low:0.06"`
+`python3 scripts/rank_candidates.py | python3 scripts/position_sizing.py --total-value <total_value> --cash-start <cash> --concurrent-positions-start <concurrent_positions_start> [--entries-halted] --max-position-pct <position_sizing.max_position_pct_of_account> --max-concurrent-positions <position_sizing.max_concurrent_positions> --min-cash-buffer-pct <position_sizing.min_cash_buffer_pct> --min-top-up-usd <position_sizing.min_top_up_usd> --min-top-up-pct-of-target <position_sizing.min_top_up_pct_of_target> --conviction-pct "high:0.20,medium:0.12,low:0.06" [--top-ups-disabled, when position_sizing.top_ups_enabled is false] --risk-per-trade-pct <position_sizing.risk_per_trade_pct_of_account> --size-multiplier <stop_cluster size_multiplier, 1.0 if none> --max-new-per-day <position_sizing.max_new_positions_per_day> --new-today <N> --max-new-per-week <position_sizing.max_new_positions_per_week> --new-this-week <N> --max-per-sector <position_sizing.max_positions_per_sector> --held-sectors "<sector|sector|...>"`
 `rank_candidates.py` sorts by conviction tier first (`high` before
 `medium` before `low`), then `risk_flags` count ascending within a
 tier (a missing `risk_flags` field sorts last, treated as worst
@@ -585,7 +638,9 @@ any of it:
   `position_action: "top_up"`, `dollar_amount`,
   `current_position_value`, `target_size`, `headroom`,
   `concurrent_positions_after`, `cash_remaining_after`,
-  `cash_buffer_after_pct`
+  `cash_buffer_after_pct`, plus for new entries `sized_by`
+  (`"conviction"` or `"risk"` — the dollar size was cut to honor
+  `risk_per_trade_pct_of_account`), `stop_pct`, `sector`/`sector_check`
 - top-level `cash_remaining_final` and
   `concurrent_positions_after_final`
 
@@ -738,6 +793,9 @@ stalling the run with real fills never pushed.
   `create_watchlist`/`add_to_watchlist` on the `FriesTrader` list. Never
   remove items from it or touch any other watchlist.
 - A "high conviction" thesis never overrides a failed mechanical check.
+- The stop-cluster breaker, daily/weekly loss limits, per-day/per-week/
+  per-sector entry caps and risk-based sizing only ever limit buys; they
+  never block, delay or resize a stop_loss/take_profit/exit_existing sell.
 - If required data can't be retrieved (portfolio, positions, P&L history),
   fail safe — treat the check as failed/halt new entries — and log exactly
   what failed.

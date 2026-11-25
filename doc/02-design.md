@@ -119,11 +119,15 @@ Phase B 读取最新 proposal 和历史日志，完成：
 
 ### 4.4 `take_profit.py`
 
-按升序检查多个收益层。单周期跨越多个 tier 时，后续 tier 使用前一 tier 扣除后的数量，避免重复按原始数量卖出。
+按升序检查多个收益层。单周期跨越多个 tier 时，后续 tier 使用前一 tier 扣除后的数量，避免重复按原始数量卖出。`sell_fraction` 是占**剩余**数量的比例：当前配置 6%/12%/20% 对应 0.3333/0.5/1.0，即每档卖原始仓位的 1/3，第三档清仓。
 
 ### 4.5 `conviction_trim.py`
 
-当连续多个周期 conviction 不是 high 且持仓显著超过目标仓位时，计算 trim 金额。
+当连续多个周期 conviction 不是 high 且持仓显著超过目标仓位时，计算 trim 金额。当前 `conviction_trim.enabled=false`，Phase B 整步跳过。
+
+### 4.5b `stop_cluster.py`
+
+输入最近止损触发的“距今交易日数”。窗口内止损次数 ≥ `max_stops` 时：距最近一次止损不足 `pause_trading_days` 则 `entries_halted`；其后至集群滑出窗口前，新仓金额乘 `size_multiplier`。只限制买入，不影响卖出。
 
 ### 4.6 `rank_candidates.py`
 
@@ -133,7 +137,9 @@ Phase B 读取最新 proposal 和历史日志，完成：
 
 按排序后的候选顺序累积计算：
 
-- 新仓金额；
+- 新仓金额（取信念档位目标与风险额上限的较小值：`risk_per_trade_pct_of_account × 总值 ÷ stop_pct`，`stop_pct` 由 `stop_loss.py --compute-stop-pct-only` 给出；止损集群降档时再乘 `size_multiplier`）；
+- 每日/每周新开仓数量上限、同一行业持仓上限；
+- `top_ups_enabled=false` 时拒绝所有 top-up；
 - 已有仓位 top-up 金额；
 - 剩余现金；
 - 现金缓冲；
